@@ -5,6 +5,7 @@ import { getFacilityBySlug, getAvailability, getLowestPrice } from "@/lib/facili
 import PhotoGallery from "@/components/PhotoGallery";
 import PricingTable from "@/components/PricingTable";
 import AvailabilityCalendar from "@/components/AvailabilityCalendar";
+import PriceSimulator from "@/components/PriceSimulator";
 
 type Props = {
   params: Promise<{ slug: string }>;
@@ -211,23 +212,9 @@ export default async function FacilityPage({ params }: Props) {
                   )}
                 </dl>
 
-                {/* アクションボタン */}
-                <div className="space-y-3 pt-2">
-                  <Link
-                    href={`/facility/${slug}/inquiry`}
-                    className="block w-full rounded-xl bg-blue-600 px-4 py-3 text-center text-sm font-semibold text-white hover:bg-blue-700 transition-colors"
-                  >
-                    この施設に問い合わせる
-                  </Link>
-                  <Link
-                    href={`/facility/${slug}/reserve`}
-                    className="block w-full rounded-xl border-2 border-blue-600 px-4 py-3 text-center text-sm font-semibold text-blue-600 hover:bg-blue-50 transition-colors"
-                  >
-                    予約リクエストを送る
-                  </Link>
-                </div>
               </div>
             </div>
+            <PriceSimulator facilityId={Number(facility.id)} facilitySlug={slug} />
           </aside>
         </div>
       </div>
