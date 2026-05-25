@@ -6,6 +6,7 @@ import PhotoGallery from "@/components/PhotoGallery";
 import PricingTable from "@/components/PricingTable";
 import AvailabilityCalendar from "@/components/AvailabilityCalendar";
 import PriceSimulator from "@/components/PriceSimulator";
+import FavoriteButton from "@/components/FavoriteButton";
 
 type Props = {
   params: Promise<{ slug: string }>;
@@ -89,7 +90,10 @@ export default async function FacilityPage({ params }: Props) {
           <div className="flex-1 min-w-0 space-y-10">
             {/* タイトル */}
             <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">{facility.name}</h1>
+              <div className="flex items-center gap-3">
+                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">{facility.name}</h1>
+                <FavoriteButton facilityId={Number(facility.id)} />
+              </div>
               {facility.areas && (
                 <Link
                   href={`/search?area=${facility.areas.slug}`}

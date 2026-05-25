@@ -35,3 +35,46 @@
 ### 管理者
 - 施設審査・掲載管理
 - タグ管理
+
+## データベーステーブル構造
+
+コードで列名を誤用しないよう、正確なカラム名を以下に記録する。
+
+### profiles
+`id`(uuid), `role`, `display_name`, `email`, `phone`, `avatar_url`, `created_at`, `updated_at`
+
+### areas
+`id`, `name`, `slug`, `prefecture`, `sort_order`, `created_at`
+
+### tags
+`id`, `name`, `slug`, `category`, `sort_order`, `created_at`
+
+### facilities
+`id`, `owner_id`, `name`, `slug`, `description`, `area_id`, `address`, `latitude`, `longitude`, `max_guests`, `bedrooms`, `bathrooms`, `parking_spaces`, `checkin_time`, `checkout_time`, `min_nights`, `status`, `is_published`, `published_at`, `created_at`, `updated_at`
+
+### facility_images
+`id`, `facility_id`, `url`, `alt_text`, `sort_order`, `is_hero`, `created_at`
+
+### facility_tags
+`facility_id`, `tag_id`
+
+### seasons
+`id`, `facility_id`, `name`, `start_date`, `end_date`, `created_at`
+
+### pricing_rules
+`id`, `facility_id`, `season`, `day_type`, `price_per_night`, `created_at`
+
+### pricing_overrides
+`id`, `facility_id`, `target_date`, `price_per_night`, `reason`, `created_at`
+
+### availability
+`id`, `facility_id`, `target_date`, `is_available`, `source`, `created_at`
+
+### favorites
+`id`, `user_id`, `facility_id`, `created_at`
+
+### inquiries
+`id`, `facility_id`, `user_id`, `guest_name`, `guest_email`, `guest_phone`, `guest_count`, `checkin_date`, `checkout_date`, `message`, `status`, `created_at`, `updated_at`
+
+### reservation_requests
+`id`, `facility_id`, `user_id`, `guest_name`, `guest_email`, `guest_phone`, `guest_count`, `checkin_date`, `checkout_date`, `total_price`, `message`, `status`, `owner_reply`, `created_at`, `updated_at`

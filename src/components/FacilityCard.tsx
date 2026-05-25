@@ -1,11 +1,13 @@
 import Link from "next/link";
 import Image from "next/image";
+import FavoriteButton from "@/components/FavoriteButton";
 
 type Tag = {
   name: string;
 };
 
 type Props = {
+  facilityId: number;
   slug: string;
   name: string;
   areaName: string | null;
@@ -16,6 +18,7 @@ type Props = {
 };
 
 export default function FacilityCard({
+  facilityId,
   slug,
   name,
   areaName,
@@ -33,6 +36,9 @@ export default function FacilityCard({
     >
       {/* サムネイル */}
       <div className="relative aspect-video overflow-hidden bg-gray-100">
+        <div className="absolute top-2 right-2 z-10">
+          <FavoriteButton facilityId={facilityId} />
+        </div>
         {heroImageUrl ? (
           <Image
             src={heroImageUrl}

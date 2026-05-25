@@ -120,6 +120,7 @@ export default async function SearchPage({
                 {facilities.map((facility) => (
                   <li key={facility.id}>
                     <FacilityCard
+                      facilityId={Number(facility.id)}
                       slug={facility.slug}
                       name={facility.name}
                       areaName={facility.areas?.name ?? null}

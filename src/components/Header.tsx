@@ -2,9 +2,20 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { useAuth } from "@/components/AuthProvider";
+import { signOut } from "@/lib/auth";
+import { useRouter } from "next/navigation";
 
 export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const { user } = useAuth();
+  const router = useRouter();
+
+  async function handleSignOut() {
+    await signOut();
+    router.push("/");
+    router.refresh();
+  }
 
   return (
     <header className="sticky top-0 z-50 bg-white border-b border-gray-200">
@@ -21,12 +32,26 @@ export default function Header() {
             <Link href="/favorites" className="text-sm text-gray-600 hover:text-gray-900 transition-colors">
               お気に入り
             </Link>
-            <Link
-              href="/login"
-              className="text-sm bg-gray-900 text-white px-4 py-2 rounded-md hover:bg-gray-700 transition-colors"
-            >
-              ログイン
-            </Link>
+            {user ? (
+              <div className="flex items-center gap-3">
+                <span className="text-sm text-gray-700">
+                  {user.user_metadata?.display_name ?? user.email}
+                </span>
+                <button
+                  onClick={handleSignOut}
+                  className="text-sm bg-gray-900 text-white px-4 py-2 rounded-md hover:bg-gray-700 transition-colors"
+                >
+                  ログアウト
+                </button>
+              </div>
+            ) : (
+              <Link
+                href="/login"
+                className="text-sm bg-gray-900 text-white px-4 py-2 rounded-md hover:bg-gray-700 transition-colors"
+              >
+                ログイン
+              </Link>
+            )}
           </nav>
 
           <button
@@ -58,13 +83,27 @@ export default function Header() {
             >
               お気に入り
             </Link>
-            <Link
-              href="/login"
-              className="text-sm text-gray-600 hover:text-gray-900 py-2 transition-colors"
-              onClick={() => setMenuOpen(false)}
-            >
-              ログイン
-            </Link>
+            {user ? (
+              <>
+                <span className="text-sm text-gray-700 py-2">
+                  {user.user_metadata?.display_name ?? user.email}
+                </span>
+                <button
+                  onClick={() => { setMenuOpen(false); handleSignOut(); }}
+                  className="text-sm text-gray-600 hover:text-gray-900 py-2 transition-colors text-left"
+                >
+                  ログアウト
+                </button>
+              </>
+            ) : (
+              <Link
+                href="/login"
+                className="text-sm text-gray-600 hover:text-gray-900 py-2 transition-colors"
+                onClick={() => setMenuOpen(false)}
+              >
+                ログイン
+              </Link>
+            )}
           </nav>
         </div>
       )}
