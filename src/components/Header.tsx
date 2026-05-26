@@ -1,15 +1,33 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/components/AuthProvider";
 import { signOut } from "@/lib/auth";
+import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 
 export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
   const { user } = useAuth();
   const router = useRouter();
+  const [role, setRole] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!user) {
+      setRole(null);
+      return;
+    }
+    supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .single()
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .then(({ data }: { data: any }) => setRole(data?.role ?? null));
+  }, [user]);
+
+  const isOwnerOrAdmin = role === "owner" || role === "admin";
 
   async function handleSignOut() {
     await signOut();
@@ -32,6 +50,11 @@ export default function Header() {
             <Link href="/favorites" className="text-sm text-gray-600 hover:text-gray-900 transition-colors">
               お気に入り
             </Link>
+            {isOwnerOrAdmin && (
+              <Link href="/owner" className="text-sm text-gray-600 hover:text-gray-900 transition-colors">
+                施設管理
+              </Link>
+            )}
             {user ? (
               <div className="flex items-center gap-3">
                 <span className="text-sm text-gray-700">
@@ -83,6 +106,15 @@ export default function Header() {
             >
               お気に入り
             </Link>
+            {isOwnerOrAdmin && (
+              <Link
+                href="/owner"
+                className="text-sm text-gray-600 hover:text-gray-900 py-2 transition-colors"
+                onClick={() => setMenuOpen(false)}
+              >
+                施設管理
+              </Link>
+            )}
             {user ? (
               <>
                 <span className="text-sm text-gray-700 py-2">
