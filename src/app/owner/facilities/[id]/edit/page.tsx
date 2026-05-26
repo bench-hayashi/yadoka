@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider";
 import { supabase } from "@/lib/supabase";
 import FacilityForm, { type FormData } from "@/components/owner/FacilityForm";
+import PhotoManager from "@/components/owner/PhotoManager";
 
 type FacilityRow = {
   id: string;
@@ -28,6 +29,7 @@ export default function EditFacilityPage() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
 
+  const [tab, setTab] = useState<"info" | "photos">("info");
   const [initialForm, setInitialForm] = useState<Partial<FormData> | null>(null);
   const [initialTagIds, setInitialTagIds] = useState<string[]>([]);
   const [currentStatus, setCurrentStatus] = useState<string>("draft");
@@ -104,23 +106,52 @@ export default function EditFacilityPage() {
     );
   }
 
+  const TABS = [
+    { key: "info",   label: "基本情報" },
+    { key: "photos", label: "写真管理" },
+  ] as const;
+
   return (
     <div className="space-y-6 max-w-2xl">
       <h1 className="text-2xl font-bold text-gray-900">施設情報を編集する</h1>
 
-      {currentStatus === "rejected" && (
+      {currentStatus === "rejected" && tab === "info" && (
         <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
           この施設は審査で差し戻されました。内容を修正して再申請できます。
         </div>
       )}
 
-      <FacilityForm
-        mode="edit"
-        initialFacilityId={id}
-        initialForm={initialForm!}
-        initialTagIds={initialTagIds}
-        currentStatus={currentStatus}
-      />
+      {/* タブ */}
+      <div className="flex border-b border-gray-200">
+        {TABS.map(({ key, label }) => (
+          <button
+            key={key}
+            type="button"
+            onClick={() => setTab(key)}
+            className={`px-5 py-2.5 text-sm font-medium border-b-2 transition-colors ${
+              tab === key
+                ? "border-blue-600 text-blue-600"
+                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+            }`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {tab === "info" && (
+        <FacilityForm
+          mode="edit"
+          initialFacilityId={id}
+          initialForm={initialForm!}
+          initialTagIds={initialTagIds}
+          currentStatus={currentStatus}
+        />
+      )}
+
+      {tab === "photos" && (
+        <PhotoManager facilityId={id} />
+      )}
     </div>
   );
 }
