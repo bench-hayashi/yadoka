@@ -29,15 +29,15 @@ export default async function Home() {
   return (
     <>
       {/* Hero */}
-      <section className="bg-gradient-to-br from-blue-700 to-blue-500 px-4 py-20 sm:py-28">
+      <section className="bg-gradient-to-br from-[#1B4332] to-[#2D6A4F] px-4 py-20 sm:py-28">
         <div className="max-w-4xl mx-auto text-center">
-          <p className="text-base sm:text-lg font-medium text-blue-100 tracking-wide">
+          <p className="text-base sm:text-lg font-medium text-green-100 tracking-wide">
             貸別荘・一棟貸しを探すなら
           </p>
           <h1 className="mt-2 text-6xl sm:text-8xl font-extrabold text-white tracking-tight">
             YADOKA
           </h1>
-          <p className="mt-4 text-sm sm:text-base text-blue-100 leading-relaxed">
+          <p className="mt-4 text-sm sm:text-base text-green-100 leading-relaxed">
             空き状況と料金がひと目でわかる。全国の貸別荘を比較・検索。
           </p>
           <div className="mt-10 max-w-4xl mx-auto">
@@ -55,7 +55,7 @@ export default async function Home() {
               <li key={area.id}>
                 <Link
                   href={`/search?area=${area.slug}`}
-                  className="block rounded-xl border border-gray-200 bg-white px-4 py-5 text-center hover:border-blue-300 hover:shadow-sm transition-all"
+                  className="block rounded-xl border border-gray-200 bg-white px-4 py-5 text-center hover:border-[#2D6A4F] hover:shadow-sm transition-all"
                 >
                   <p className="font-semibold text-gray-900">{area.name}</p>
                   <p className="mt-1 text-xs text-gray-400">{area.prefecture}</p>
@@ -78,7 +78,7 @@ export default async function Home() {
                 <li key={tag.id}>
                   <Link
                     href={`/search?tag=${tag.slug}`}
-                    className="inline-block rounded-full border border-gray-200 bg-white px-5 py-2 text-sm font-medium text-gray-700 hover:border-blue-400 hover:text-blue-600 transition-colors"
+                    className="inline-block rounded-full border border-gray-200 bg-white px-5 py-2 text-sm font-medium text-gray-700 hover:border-[#2D6A4F] hover:text-[#1B4332] transition-colors"
                   >
                     {tag.name}
                   </Link>

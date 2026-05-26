@@ -57,9 +57,9 @@ function StepIndicator({ current }: { current: number }) {
             <div
               className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all ${
                 i < current
-                  ? "bg-blue-600 text-white"
+                  ? "bg-[#1B4332] text-white"
                   : i === current
-                  ? "bg-blue-600 text-white ring-4 ring-blue-100"
+                  ? "bg-[#1B4332] text-white ring-4 ring-[#D8F3DC]"
                   : "bg-gray-200 text-gray-500"
               }`}
             >
@@ -67,7 +67,7 @@ function StepIndicator({ current }: { current: number }) {
             </div>
             <span
               className={`text-xs font-medium ${
-                i === current ? "text-blue-600" : i < current ? "text-blue-400" : "text-gray-400"
+                i === current ? "text-[#1B4332]" : i < current ? "text-[#2D6A4F]" : "text-gray-400"
               }`}
             >
               {label}
@@ -76,7 +76,7 @@ function StepIndicator({ current }: { current: number }) {
           {i < STEPS.length - 1 && (
             <div
               className={`h-0.5 w-14 mx-2 mb-5 transition-colors ${
-                i < current ? "bg-blue-600" : "bg-gray-200"
+                i < current ? "bg-[#1B4332]" : "bg-gray-200"
               }`}
             />
           )}
@@ -302,7 +302,7 @@ export default function FacilityForm({
   }
 
   const inputCls = (field: string) =>
-    `w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+    `w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#1B4332] focus:border-transparent ${
       errors[field] ? "border-red-400" : "border-gray-300"
     }`;
 
@@ -524,7 +524,7 @@ export default function FacilityForm({
                           key={tag.id}
                           className={`flex items-center gap-1.5 cursor-pointer rounded-full border px-3 py-1.5 text-sm transition-colors select-none ${
                             selectedTagIds.has(tag.id)
-                              ? "border-blue-500 bg-blue-50 text-blue-700"
+                              ? "border-[#1B4332] bg-[#D8F3DC] text-[#1B4332]"
                               : "border-gray-200 bg-white text-gray-700 hover:border-gray-300 hover:bg-gray-50"
                           }`}
                         >
@@ -577,7 +577,7 @@ export default function FacilityForm({
             <button
               type="button"
               onClick={handleNext}
-              className="rounded-lg bg-blue-600 px-5 py-2 text-sm font-semibold text-white hover:bg-blue-700 transition-colors"
+              className="rounded-lg bg-[#1B4332] px-5 py-2 text-sm font-semibold text-white hover:bg-[#2D6A4F] transition-colors"
             >
               次へ
             </button>

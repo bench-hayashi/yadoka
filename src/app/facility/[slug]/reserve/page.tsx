@@ -175,7 +175,7 @@ function ReserveContent() {
     return (
       <div className="max-w-2xl mx-auto px-4 sm:px-6 py-16 text-center">
         <p className="text-gray-500 mb-4">施設が見つかりませんでした。</p>
-        <Link href="/search" className="text-sm text-blue-600 hover:text-blue-800 transition-colors">
+        <Link href="/search" className="text-sm text-[#1B4332] hover:text-[#2D6A4F] transition-colors">
           施設を検索する
         </Link>
       </div>
@@ -210,7 +210,7 @@ function ReserveContent() {
           </p>
           <Link
             href={`/facility/${slug}`}
-            className="inline-block text-sm text-blue-600 hover:text-blue-800 transition-colors"
+            className="inline-block text-sm text-[#1B4332] hover:text-[#2D6A4F] transition-colors"
           >
             ← 施設詳細ページに戻る
           </Link>
@@ -239,7 +239,7 @@ function ReserveContent() {
           </div>
           <div>
             <p className="text-xs text-gray-400 mb-0.5">予約先施設</p>
-            <p className="font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
+            <p className="font-semibold text-gray-900 group-hover:text-[#1B4332] transition-colors">
               {facility.name}
             </p>
           </div>
@@ -395,7 +395,7 @@ function ReserveContent() {
               {pricingResult.pricing ? (
                 <div className="space-y-0.5">
                   <p className="text-xs text-gray-500">{pricingResult.pricing.nights}泊</p>
-                  <p className="text-2xl font-bold text-blue-600">
+                  <p className="text-2xl font-bold text-[#1B4332]">
                     ¥{pricingResult.pricing.totalPrice.toLocaleString("ja-JP")}
                   </p>
                 </div>

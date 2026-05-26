@@ -52,7 +52,7 @@ export default function SearchForm({ areas }: Props) {
           <select
             value={area}
             onChange={(e) => setArea(e.target.value)}
-            className="h-11 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="h-11 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-900 focus:border-[#1B4332] focus:outline-none focus:ring-1 focus:ring-[#1B4332]"
           >
             <option value="">エリアを選択</option>
             {areas.map((a) => (
@@ -78,7 +78,7 @@ export default function SearchForm({ areas }: Props) {
                 setCheckout(d.toISOString().split("T")[0]);
               }
             }}
-            className="h-11 rounded-lg border border-gray-200 px-3 text-sm text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="h-11 rounded-lg border border-gray-200 px-3 text-sm text-gray-900 focus:border-[#1B4332] focus:outline-none focus:ring-1 focus:ring-[#1B4332]"
           />
         </div>
 
@@ -90,7 +90,7 @@ export default function SearchForm({ areas }: Props) {
             value={checkout}
             min={checkin}
             onChange={(e) => setCheckout(e.target.value)}
-            className="h-11 rounded-lg border border-gray-200 px-3 text-sm text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="h-11 rounded-lg border border-gray-200 px-3 text-sm text-gray-900 focus:border-[#1B4332] focus:outline-none focus:ring-1 focus:ring-[#1B4332]"
           />
         </div>
 
@@ -103,7 +103,7 @@ export default function SearchForm({ areas }: Props) {
             min={1}
             max={30}
             onChange={(e) => setGuests(Number(e.target.value))}
-            className="h-11 w-24 rounded-lg border border-gray-200 px-3 text-sm text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="h-11 w-24 rounded-lg border border-gray-200 px-3 text-sm text-gray-900 focus:border-[#1B4332] focus:outline-none focus:ring-1 focus:ring-[#1B4332]"
           />
         </div>
 
@@ -111,7 +111,7 @@ export default function SearchForm({ areas }: Props) {
         <div className="flex flex-col justify-end">
           <button
             type="submit"
-            className="h-11 rounded-lg bg-blue-600 px-6 text-sm font-semibold text-white hover:bg-blue-700 active:bg-blue-800 transition-colors whitespace-nowrap"
+            className="h-11 rounded-lg bg-[#1B4332] px-6 text-sm font-semibold text-white hover:bg-[#2D6A4F] active:bg-[#1B4332] transition-colors whitespace-nowrap"
           >
             この条件で検索する
           </button>

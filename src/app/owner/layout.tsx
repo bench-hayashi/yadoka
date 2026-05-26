@@ -28,7 +28,7 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
           onClick={onNavigate}
           className={`block px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
             isActive(href)
-              ? "bg-gray-100 text-gray-900"
+              ? "bg-[#D8F3DC] text-[#1B4332]"
               : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
           }`}
         >

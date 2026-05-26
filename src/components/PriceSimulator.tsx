@@ -112,7 +112,7 @@ export default function PriceSimulator({ facilityId, facilitySlug }: Props) {
                   setCheckout(d.toISOString().split("T")[0]);
                 }
               }}
-              className="h-10 rounded-lg border border-gray-200 px-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="h-10 rounded-lg border border-gray-200 px-3 text-sm focus:border-[#1B4332] focus:outline-none focus:ring-1 focus:ring-[#1B4332]"
             />
           </div>
           <div className="flex flex-col gap-1">
@@ -122,7 +122,7 @@ export default function PriceSimulator({ facilityId, facilitySlug }: Props) {
               value={checkout}
               min={checkin}
               onChange={(e) => setCheckout(e.target.value)}
-              className="h-10 rounded-lg border border-gray-200 px-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="h-10 rounded-lg border border-gray-200 px-3 text-sm focus:border-[#1B4332] focus:outline-none focus:ring-1 focus:ring-[#1B4332]"
             />
           </div>
         </div>
@@ -133,7 +133,7 @@ export default function PriceSimulator({ facilityId, facilitySlug }: Props) {
             value={guests}
             min={1}
             onChange={(e) => setGuests(Math.max(1, Number(e.target.value)))}
-            className="h-10 w-24 rounded-lg border border-gray-200 px-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="h-10 w-24 rounded-lg border border-gray-200 px-3 text-sm focus:border-[#1B4332] focus:outline-none focus:ring-1 focus:ring-[#1B4332]"
           />
         </div>
       </div>
@@ -154,7 +154,7 @@ export default function PriceSimulator({ facilityId, facilitySlug }: Props) {
           {/* サマリー */}
           <div className="space-y-1">
             <p className="text-xs text-gray-400">{result.pricing.nights}泊</p>
-            <p className="text-3xl font-bold text-blue-600">
+            <p className="text-3xl font-bold text-[#1B4332]">
               ¥{result.pricing.totalPrice.toLocaleString("ja-JP")}
             </p>
             <p className="text-xs text-gray-400">
@@ -202,7 +202,7 @@ export default function PriceSimulator({ facilityId, facilitySlug }: Props) {
                     <span className="text-gray-400 mx-2">{SEASON_LABEL[b.season]}・{DAY_TYPE_LABEL[b.dayType]}</span>
                     <span className="font-medium text-gray-900 tabular-nums">
                       ¥{b.price.toLocaleString("ja-JP")}
-                      {b.isOverride && <span className="ml-1 text-blue-500">*</span>}
+                      {b.isOverride && <span className="ml-1 text-[#B8860B]">*</span>}
                     </span>
                   </li>
                 ))}
@@ -221,13 +221,13 @@ export default function PriceSimulator({ facilityId, facilitySlug }: Props) {
       <div className="space-y-2 pt-1 border-t border-gray-100">
         <Link
           href={buildInquiryUrl(inquiryBase, checkin, checkout, guests)}
-          className="block w-full rounded-xl bg-blue-600 px-4 py-3 text-center text-sm font-semibold text-white hover:bg-blue-700 transition-colors"
+          className="block w-full rounded-xl bg-[#1B4332] px-4 py-3 text-center text-sm font-semibold text-white hover:bg-[#2D6A4F] transition-colors"
         >
           この条件で問い合わせる
         </Link>
         <Link
           href={buildInquiryUrl(reserveBase, checkin, checkout, guests)}
-          className="block w-full rounded-xl border-2 border-blue-600 px-4 py-3 text-center text-sm font-semibold text-blue-600 hover:bg-blue-50 transition-colors"
+          className="block w-full rounded-xl border-2 border-[#B8860B] px-4 py-3 text-center text-sm font-semibold text-[#B8860B] hover:bg-[#F5E6CC] transition-colors"
         >
           予約リクエストを送る
         </Link>

@@ -116,7 +116,7 @@ export default function OwnerDashboard() {
         <h1 className="text-2xl font-bold text-gray-900">ダッシュボード</h1>
         <Link
           href="/owner/facilities/new"
-          className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 transition-colors"
+          className="rounded-lg bg-[#1B4332] px-4 py-2 text-sm font-semibold text-white hover:bg-[#2D6A4F] transition-colors"
         >
           + 新しい施設を登録
         </Link>
@@ -154,7 +154,7 @@ export default function OwnerDashboard() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Link
             href="/owner/inquiries"
-            className="rounded-xl bg-white border border-gray-200 p-5 flex items-center justify-between hover:border-blue-300 hover:shadow-sm transition-all"
+            className="rounded-xl bg-white border border-gray-200 p-5 flex items-center justify-between hover:border-[#2D6A4F] hover:shadow-sm transition-all"
           >
             <div className="space-y-0.5">
               <p className="text-xs font-medium text-gray-500">新着問い合わせ</p>
@@ -162,14 +162,14 @@ export default function OwnerDashboard() {
               <p className="text-xs text-gray-400">件</p>
             </div>
             {newInquiries > 0 && (
-              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-600 text-xs font-bold text-white">
+              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#1B4332] text-xs font-bold text-white">
                 {newInquiries > 99 ? "99+" : newInquiries}
               </span>
             )}
           </Link>
           <Link
             href="/owner/reservations"
-            className="rounded-xl bg-white border border-gray-200 p-5 flex items-center justify-between hover:border-blue-300 hover:shadow-sm transition-all"
+            className="rounded-xl bg-white border border-gray-200 p-5 flex items-center justify-between hover:border-[#2D6A4F] hover:shadow-sm transition-all"
           >
             <div className="space-y-0.5">
               <p className="text-xs font-medium text-gray-500">未対応の予約リクエスト</p>
@@ -193,7 +193,7 @@ export default function OwnerDashboard() {
           </h2>
           <Link
             href="/owner/facilities"
-            className="text-xs text-blue-600 hover:text-blue-800 transition-colors"
+            className="text-xs text-[#1B4332] hover:text-[#2D6A4F] transition-colors"
           >
             すべて見る →
           </Link>
@@ -204,7 +204,7 @@ export default function OwnerDashboard() {
             <p className="text-sm text-gray-500 mb-4">登録済みの施設はありません。</p>
             <Link
               href="/owner/facilities/new"
-              className="text-sm text-blue-600 hover:text-blue-800 transition-colors"
+              className="text-sm text-[#1B4332] hover:text-[#2D6A4F] transition-colors"
             >
               最初の施設を登録する →
             </Link>
@@ -226,7 +226,7 @@ export default function OwnerDashboard() {
                   </span>
                   <Link
                     href={`/owner/facilities/${facility.id}/edit`}
-                    className="text-xs text-blue-600 hover:text-blue-800 transition-colors font-medium"
+                    className="text-xs text-[#1B4332] hover:text-[#2D6A4F] transition-colors font-medium"
                   >
                     編集
                   </Link>

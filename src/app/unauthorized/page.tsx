@@ -17,7 +17,7 @@ export default function UnauthorizedPage() {
       </p>
       <Link
         href="/"
-        className="mt-8 rounded-xl bg-blue-600 px-6 py-3 text-sm font-semibold text-white hover:bg-blue-700 transition-colors"
+        className="mt-8 rounded-xl bg-[#1B4332] px-6 py-3 text-sm font-semibold text-white hover:bg-[#2D6A4F] transition-colors"
       >
         トップページへ戻る
       </Link>

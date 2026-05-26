@@ -67,7 +67,7 @@ export default function OwnerFacilitiesPage() {
         <h1 className="text-2xl font-bold text-gray-900">施設管理</h1>
         <Link
           href="/owner/facilities/new"
-          className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 transition-colors"
+          className="rounded-lg bg-[#1B4332] px-4 py-2 text-sm font-semibold text-white hover:bg-[#2D6A4F] transition-colors"
         >
           + 新しい施設を登録
         </Link>
@@ -84,7 +84,7 @@ export default function OwnerFacilitiesPage() {
           <p className="text-sm text-gray-500">登録された施設がありません。</p>
           <Link
             href="/owner/facilities/new"
-            className="inline-block rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 transition-colors"
+            className="inline-block rounded-lg bg-[#1B4332] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#2D6A4F] transition-colors"
           >
             新しい施設を登録
           </Link>
@@ -132,7 +132,7 @@ export default function OwnerFacilitiesPage() {
                     <td className="px-5 py-4 text-right">
                       <Link
                         href={`/owner/facilities/${f.id}/edit`}
-                        className="text-blue-600 hover:text-blue-800 font-medium transition-colors"
+                        className="text-[#1B4332] hover:text-[#2D6A4F] font-medium transition-colors"
                       >
                         編集
                       </Link>
@@ -151,7 +151,7 @@ export default function OwnerFacilitiesPage() {
                   <p className="font-medium text-gray-900 text-sm leading-snug">{f.name}</p>
                   <Link
                     href={`/owner/facilities/${f.id}/edit`}
-                    className="shrink-0 text-xs text-blue-600 hover:text-blue-800 font-medium transition-colors"
+                    className="shrink-0 text-xs text-[#1B4332] hover:text-[#2D6A4F] font-medium transition-colors"
                   >
                     編集
                   </Link>

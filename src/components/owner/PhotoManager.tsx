@@ -118,7 +118,7 @@ export default function PhotoManager({ facilityId }: Props) {
           <button
             type="button"
             onClick={() => open()}
-            className="inline-flex items-center gap-2 rounded-lg border border-dashed border-gray-300 bg-white px-5 py-3 text-sm font-medium text-gray-600 hover:border-blue-400 hover:text-blue-600 transition-colors"
+            className="inline-flex items-center gap-2 rounded-lg border border-dashed border-gray-300 bg-white px-5 py-3 text-sm font-medium text-gray-600 hover:border-[#2D6A4F] hover:text-[#1B4332] transition-colors"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />

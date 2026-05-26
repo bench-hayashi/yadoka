@@ -312,7 +312,7 @@ export default function PricingManager({ facilityId }: Props) {
                           value={fmtNum(grid[key].raw)}
                           onChange={e => setGridCell(key, e.target.value)}
                           placeholder="0"
-                          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-right text-sm tabular-nums focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-right text-sm tabular-nums focus:border-[#1B4332] focus:outline-none focus:ring-1 focus:ring-[#1B4332]"
                         />
                       </td>
                     );
@@ -328,7 +328,7 @@ export default function PricingManager({ facilityId }: Props) {
             type="button"
             onClick={saveGrid}
             disabled={savingGrid}
-            className="rounded-lg bg-blue-600 px-5 py-2 text-sm font-semibold text-white hover:bg-blue-700 transition-colors disabled:opacity-50"
+            className="rounded-lg bg-[#1B4332] px-5 py-2 text-sm font-semibold text-white hover:bg-[#2D6A4F] transition-colors disabled:opacity-50"
           >
             {savingGrid ? "保存中..." : "保存"}
           </button>
@@ -348,7 +348,7 @@ export default function PricingManager({ facilityId }: Props) {
               <select
                 value={s.name}
                 onChange={e => setSeason(s.uid, "name", e.target.value as SeasonKey)}
-                className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#1B4332] focus:outline-none focus:ring-1 focus:ring-[#1B4332]"
               >
                 {SEASONS.map(opt => (
                   <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -359,14 +359,14 @@ export default function PricingManager({ facilityId }: Props) {
                 type="date"
                 value={s.start_date}
                 onChange={e => setSeason(s.uid, "start_date", e.target.value)}
-                className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#1B4332] focus:outline-none focus:ring-1 focus:ring-[#1B4332]"
               />
               <span className="text-sm text-gray-400">〜</span>
               <input
                 type="date"
                 value={s.end_date}
                 onChange={e => setSeason(s.uid, "end_date", e.target.value)}
-                className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#1B4332] focus:outline-none focus:ring-1 focus:ring-[#1B4332]"
               />
 
               <button
@@ -384,7 +384,7 @@ export default function PricingManager({ facilityId }: Props) {
           <button
             type="button"
             onClick={addSeason}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-dashed border-gray-300 px-4 py-2 text-sm text-gray-600 hover:border-blue-400 hover:text-blue-600 transition-colors"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-dashed border-gray-300 px-4 py-2 text-sm text-gray-600 hover:border-[#2D6A4F] hover:text-[#1B4332] transition-colors"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
@@ -395,7 +395,7 @@ export default function PricingManager({ facilityId }: Props) {
             type="button"
             onClick={saveSeasons}
             disabled={savingSeasons}
-            className="rounded-lg bg-blue-600 px-5 py-2 text-sm font-semibold text-white hover:bg-blue-700 transition-colors disabled:opacity-50"
+            className="rounded-lg bg-[#1B4332] px-5 py-2 text-sm font-semibold text-white hover:bg-[#2D6A4F] transition-colors disabled:opacity-50"
           >
             {savingSeasons ? "保存中..." : "保存"}
           </button>
@@ -416,7 +416,7 @@ export default function PricingManager({ facilityId }: Props) {
                 type="date"
                 value={o.target_date}
                 onChange={e => setOverride(o.uid, "target_date", e.target.value)}
-                className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#1B4332] focus:outline-none focus:ring-1 focus:ring-[#1B4332]"
               />
               <input
                 type="text"
@@ -424,14 +424,14 @@ export default function PricingManager({ facilityId }: Props) {
                 value={fmtNum(o.price_per_night)}
                 onChange={e => setOverride(o.uid, "price_per_night", e.target.value)}
                 placeholder="料金（円）"
-                className="w-36 rounded-lg border border-gray-300 px-3 py-2 text-right text-sm tabular-nums focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="w-36 rounded-lg border border-gray-300 px-3 py-2 text-right text-sm tabular-nums focus:border-[#1B4332] focus:outline-none focus:ring-1 focus:ring-[#1B4332]"
               />
               <input
                 type="text"
                 value={o.reason}
                 onChange={e => setOverride(o.uid, "reason", e.target.value)}
                 placeholder="理由（例：GW特別料金）"
-                className="flex-1 min-w-40 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="flex-1 min-w-40 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#1B4332] focus:outline-none focus:ring-1 focus:ring-[#1B4332]"
               />
               <button
                 type="button"
@@ -448,7 +448,7 @@ export default function PricingManager({ facilityId }: Props) {
           <button
             type="button"
             onClick={addOverride}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-dashed border-gray-300 px-4 py-2 text-sm text-gray-600 hover:border-blue-400 hover:text-blue-600 transition-colors"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-dashed border-gray-300 px-4 py-2 text-sm text-gray-600 hover:border-[#2D6A4F] hover:text-[#1B4332] transition-colors"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
@@ -459,7 +459,7 @@ export default function PricingManager({ facilityId }: Props) {
             type="button"
             onClick={saveOverrides}
             disabled={savingOverrides}
-            className="rounded-lg bg-blue-600 px-5 py-2 text-sm font-semibold text-white hover:bg-blue-700 transition-colors disabled:opacity-50"
+            className="rounded-lg bg-[#1B4332] px-5 py-2 text-sm font-semibold text-white hover:bg-[#2D6A4F] transition-colors disabled:opacity-50"
           >
             {savingOverrides ? "保存中..." : "保存"}
           </button>

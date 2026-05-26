@@ -97,7 +97,7 @@ export default async function FacilityPage({ params }: Props) {
               {facility.areas && (
                 <Link
                   href={`/search?area=${facility.areas.slug}`}
-                  className="mt-1 inline-block text-sm text-blue-600 hover:text-blue-800 transition-colors"
+                  className="mt-1 inline-block text-sm text-[#1B4332] hover:text-[#2D6A4F] transition-colors"
                 >
                   {facility.areas.name}・{facility.areas.prefecture}
                 </Link>
@@ -163,7 +163,7 @@ export default async function FacilityPage({ params }: Props) {
                 <p className="text-2xl font-bold text-gray-900">
                   {lowestPrice !== null ? (
                     <>
-                      <span className="text-blue-600">
+                      <span className="text-[#1B4332]">
                         ¥{lowestPrice.toLocaleString("ja-JP")}
                       </span>
                       <span className="text-sm font-normal text-gray-400">〜 / 泊</span>

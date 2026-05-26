@@ -111,7 +111,7 @@ function InquiryContent() {
     return (
       <div className="max-w-2xl mx-auto px-4 sm:px-6 py-16 text-center">
         <p className="text-gray-500 mb-4">施設が見つかりませんでした。</p>
-        <Link href="/search" className="text-sm text-blue-600 hover:text-blue-800 transition-colors">
+        <Link href="/search" className="text-sm text-[#1B4332] hover:text-[#2D6A4F] transition-colors">
           施設を検索する
         </Link>
       </div>
@@ -140,7 +140,7 @@ function InquiryContent() {
           <p className="text-sm text-gray-600">施設オーナーからの返信をお待ちください。</p>
           <Link
             href={`/facility/${slug}`}
-            className="inline-block text-sm text-blue-600 hover:text-blue-800 transition-colors"
+            className="inline-block text-sm text-[#1B4332] hover:text-[#2D6A4F] transition-colors"
           >
             ← 施設詳細ページに戻る
           </Link>
@@ -169,7 +169,7 @@ function InquiryContent() {
           </div>
           <div>
             <p className="text-xs text-gray-400 mb-0.5">問い合わせ先施設</p>
-            <p className="font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
+            <p className="font-semibold text-gray-900 group-hover:text-[#1B4332] transition-colors">
               {facility.name}
             </p>
           </div>

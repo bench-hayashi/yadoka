@@ -75,7 +75,7 @@ export default async function SearchPage({
           </div>
           <Link
             href="/"
-            className="shrink-0 text-sm text-blue-600 hover:text-blue-800 transition-colors"
+            className="shrink-0 text-sm text-[#1B4332] hover:text-[#2D6A4F] transition-colors"
           >
             条件を変更
           </Link>
@@ -97,7 +97,7 @@ export default async function SearchPage({
                         <input
                           type="checkbox"
                           defaultChecked={t.slug === tag}
-                          className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                          className="h-4 w-4 rounded border-gray-300 text-[#1B4332] focus:ring-[#1B4332]"
                           disabled
                         />
                         <span className="text-sm text-gray-700 group-hover:text-gray-900 transition-colors">
@@ -141,7 +141,7 @@ export default async function SearchPage({
                 </p>
                 <Link
                   href="/"
-                  className="mt-6 text-sm text-blue-600 hover:text-blue-800 transition-colors"
+                  className="mt-6 text-sm text-[#1B4332] hover:text-[#2D6A4F] transition-colors"
                 >
                   検索条件を変更する
                 </Link>

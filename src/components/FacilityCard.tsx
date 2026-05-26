@@ -93,7 +93,7 @@ export default function FacilityCard({
         <p className="pt-1 text-sm font-semibold text-gray-900">
           {lowestPrice !== null ? (
             <>
-              <span className="text-blue-600">
+              <span className="text-[#1B4332]">
                 ¥{lowestPrice.toLocaleString("ja-JP")}〜
               </span>
               <span className="text-xs font-normal text-gray-400"> / 泊</span>
