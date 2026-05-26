@@ -190,7 +190,8 @@ export async function checkAvailability(
     (data ?? []).map((row) => [row.target_date, row.is_available]),
   );
 
-  const unavailableDates = nights.filter((d) => availMap.get(d) !== true);
+  // レコードなし（undefined）はデフォルト空室。is_available === false の日のみ満室とみなす
+  const unavailableDates = nights.filter((d) => availMap.get(d) === false);
 
   return {
     isAvailable: unavailableDates.length === 0,

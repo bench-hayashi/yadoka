@@ -6,6 +6,8 @@ import { useAuth } from "@/components/AuthProvider";
 import { supabase } from "@/lib/supabase";
 import FacilityForm, { type FormData } from "@/components/owner/FacilityForm";
 import PhotoManager from "@/components/owner/PhotoManager";
+import PricingManager from "@/components/owner/PricingManager";
+import AvailabilityManager from "@/components/owner/AvailabilityManager";
 
 type FacilityRow = {
   id: string;
@@ -29,7 +31,7 @@ export default function EditFacilityPage() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
 
-  const [tab, setTab] = useState<"info" | "photos">("info");
+  const [tab, setTab] = useState<"info" | "photos" | "pricing" | "availability">("info");
   const [initialForm, setInitialForm] = useState<Partial<FormData> | null>(null);
   const [initialTagIds, setInitialTagIds] = useState<string[]>([]);
   const [currentStatus, setCurrentStatus] = useState<string>("draft");
@@ -107,8 +109,10 @@ export default function EditFacilityPage() {
   }
 
   const TABS = [
-    { key: "info",   label: "基本情報" },
-    { key: "photos", label: "写真管理" },
+    { key: "info",         label: "基本情報" },
+    { key: "photos",       label: "写真管理" },
+    { key: "pricing",      label: "料金設定" },
+    { key: "availability", label: "空室管理" },
   ] as const;
 
   return (
@@ -151,6 +155,14 @@ export default function EditFacilityPage() {
 
       {tab === "photos" && (
         <PhotoManager facilityId={id} />
+      )}
+
+      {tab === "pricing" && (
+        <PricingManager facilityId={id} />
+      )}
+
+      {tab === "availability" && (
+        <AvailabilityManager facilityId={id} />
       )}
     </div>
   );
