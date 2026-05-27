@@ -29,21 +29,55 @@ export default async function Home() {
   return (
     <>
       {/* Hero */}
-      <section className="bg-gradient-to-br from-[#1B4332] to-[#2D6A4F] px-4 py-20 sm:py-28">
-        <div className="max-w-4xl mx-auto text-center">
-          <p className="text-base sm:text-lg font-medium text-green-100 tracking-wide">
-            貸別荘・一棟貸しを探すなら
-          </p>
-          <h1 className="mt-2 text-6xl sm:text-8xl font-extrabold text-white tracking-tight">
-            YADOKA
-          </h1>
-          <p className="mt-4 text-sm sm:text-base text-green-100 leading-relaxed">
-            空き状況と料金がひと目でわかる。全国の貸別荘を比較・検索。
-          </p>
-          <div className="mt-10 max-w-4xl mx-auto">
-            <SearchForm areas={areaList.map(({ id, name, slug }) => ({ id, name, slug }))} />
+      <section
+        className="relative overflow-hidden flex items-center min-h-[400px] sm:h-[480px]"
+        style={{ background: "linear-gradient(135deg, #0d2818 0%, #1B4332 40%, #2D6A4F 100%)" }}
+      >
+        {/* 背景画像（右側透かし） */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="https://images.unsplash.com/photo-1449158743715-0a90ebb6d2d8?w=1200"
+          alt=""
+          className="absolute top-0 right-0 h-full object-cover opacity-30 pointer-events-none w-full sm:w-[60%]"
+        />
+
+        {/* メインコンテンツ */}
+        <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-0">
+          <div className="text-center sm:text-left sm:max-w-[55%]">
+            <p
+              className="text-[12px] font-medium tracking-[2px]"
+              style={{ color: "#D8F3DC" }}
+            >
+              VACATION RENTAL PORTAL
+            </p>
+            <p
+              className="mt-4 leading-[1.5]"
+              style={{ color: "white", fontSize: "28px", fontWeight: 500 }}
+            >
+              仲間と過ごす、最高の一棟貸しを見つけよう
+            </p>
+            <p
+              className="mt-3 text-[14px]"
+              style={{ color: "#A7C4B5" }}
+            >
+              空き状況と料金がひと目でわかる。全国の貸別荘を比較・検索。
+            </p>
+            <div className="mt-8">
+              <SearchForm
+                areas={areaList.map(({ id, name, slug }) => ({ id, name, slug }))}
+                variant="hero"
+              />
+            </div>
           </div>
         </div>
+
+        {/* YADOKAウォーターマーク */}
+        <span
+          className="absolute bottom-4 right-6 text-[12px] tracking-[1px] pointer-events-none select-none"
+          style={{ color: "rgba(255,255,255,0.25)" }}
+        >
+          YADOKA
+        </span>
       </section>
 
       {/* エリアから探す */}
