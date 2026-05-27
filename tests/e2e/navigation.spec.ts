@@ -63,6 +63,7 @@ test.describe("画面遷移（導線）", () => {
     await page.waitForLoadState("networkidle");
 
     await expect(page).toHaveURL("/");
-    await expect(page.getByRole("heading", { name: "YADOKA" })).toBeVisible();
+    // ヒーロー刷新後、ヘッダーロゴでYADOKAを確認
+    await expect(page.locator("header", { hasText: "YADOKA" })).toBeVisible();
   });
 });

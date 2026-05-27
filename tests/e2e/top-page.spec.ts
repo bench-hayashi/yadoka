@@ -23,9 +23,11 @@ test.describe("トップページ", () => {
   });
 
   test("エリア一覧セクションに河口湖・軽井沢・那須が表示される", async ({ page }) => {
-    await expect(page.getByText("河口湖", { exact: true })).toBeVisible();
-    await expect(page.getByText("軽井沢", { exact: true })).toBeVisible();
-    await expect(page.getByText("那須", { exact: true })).toBeVisible();
+    // エリアカードリンクに絞って確認（SearchFormのoptionと区別するため）
+    const areaLinks = page.locator('a[href^="/search?area="]');
+    await expect(areaLinks.filter({ hasText: "河口湖" }).first()).toBeVisible();
+    await expect(areaLinks.filter({ hasText: "軽井沢" }).first()).toBeVisible();
+    await expect(areaLinks.filter({ hasText: "那須" }).first()).toBeVisible();
   });
 
   test("テーマセクションにペット可・大人数向けが表示される", async ({ page }) => {
