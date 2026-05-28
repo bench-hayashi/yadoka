@@ -7,6 +7,9 @@ import PricingTable from "@/components/PricingTable";
 import AvailabilityCalendar from "@/components/AvailabilityCalendar";
 import PriceSimulator from "@/components/PriceSimulator";
 import FavoriteButton from "@/components/FavoriteButton";
+import JsonLd from "@/components/JsonLd";
+
+const SITE_URL = "https://yadoka.vercel.app";
 
 type Props = {
   params: Promise<{ slug: string }>;
@@ -33,9 +36,18 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const facility = await getFacilityBySlug(slug);
   if (!facility) return {};
+  const description = facility.description?.slice(0, 120) ?? undefined;
+  const heroImage =
+    facility.facility_images.find((img) => img.is_hero) ?? facility.facility_images[0];
   return {
-    title: `${facility.name} | YADOKA`,
-    description: facility.description?.slice(0, 120) ?? undefined,
+    title: facility.name,
+    description,
+    openGraph: {
+      title: facility.name,
+      description,
+      ...(heroImage && { images: [{ url: heroImage.url }] }),
+      url: `${SITE_URL}/facility/${slug}`,
+    },
   };
 }
 
@@ -75,8 +87,41 @@ export default async function FacilityPage({ params }: Props) {
 
   const lowestPrice = getLowestPrice(facility.pricing_rules);
 
+  const heroImage = facility.facility_images.find((img) => img.is_hero) ?? facility.facility_images[0];
+
+  const lodgingSchema = {
+    "@context": "https://schema.org",
+    "@type": "LodgingBusiness",
+    "name": facility.name,
+    ...(facility.description && { "description": facility.description }),
+    "address": {
+      "@type": "PostalAddress",
+      ...(facility.areas?.prefecture && { "addressRegion": facility.areas.prefecture }),
+      ...(facility.address && { "streetAddress": facility.address }),
+    },
+    ...(facility.latitude != null && facility.longitude != null && {
+      "geo": {
+        "@type": "GeoCoordinates",
+        "latitude": facility.latitude,
+        "longitude": facility.longitude,
+      },
+    }),
+    ...(heroImage && { "image": heroImage.url }),
+    "amenityFeature": facility.facility_tags.map((ft) => ({
+      "@type": "LocationFeatureSpecification",
+      "name": ft.tags.name,
+      "value": true,
+    })),
+    ...(facility.checkin_time && { "checkinTime": facility.checkin_time }),
+    ...(facility.checkout_time && { "checkoutTime": facility.checkout_time }),
+    ...(facility.bedrooms != null && { "numberOfRooms": facility.bedrooms }),
+    "url": `${SITE_URL}/facility/${facility.slug}`,
+  };
+
   return (
     <div className="bg-white">
+      <JsonLd data={lodgingSchema} />
+
       {/* ギャラリー */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
         <PhotoGallery photos={photos} />
@@ -153,6 +198,72 @@ export default async function FacilityPage({ params }: Props) {
               <h2 className="text-lg font-bold text-gray-900 mb-4">空室状況</h2>
               <AvailabilityCalendar availability={availabilityForCalendar} />
             </section>
+
+            {/* FAQ */}
+            {(() => {
+              const isPetFriendly = facility.facility_tags.some(
+                (ft) => ft.tags.name === "ペット可",
+              );
+              type FaqItem = { q: string; a: string };
+              const faqs: FaqItem[] = [];
+
+              if (facility.checkin_time || facility.checkout_time) {
+                const ci = facility.checkin_time ?? "—";
+                const co = facility.checkout_time ?? "—";
+                faqs.push({
+                  q: "チェックイン・チェックアウト時間は？",
+                  a: `チェックインは${ci}から、チェックアウトは${co}までです。`,
+                });
+              }
+
+              faqs.push({
+                q: "最大何名まで宿泊できますか？",
+                a: facility.bedrooms != null
+                  ? `最大${facility.max_guests}名まで宿泊可能です。寝室は${facility.bedrooms}室あります。`
+                  : `最大${facility.max_guests}名まで宿泊可能です。`,
+              });
+
+              if (facility.parking_spaces != null) {
+                faqs.push({
+                  q: "駐車場はありますか？",
+                  a: facility.parking_spaces > 0
+                    ? `${facility.parking_spaces}台分の駐車場があります。`
+                    : "駐車場はございません。",
+                });
+              }
+
+              faqs.push({
+                q: "ペットは連れていけますか？",
+                a: isPetFriendly
+                  ? "はい、ペット同伴可能です。詳細は施設へお問い合わせください。"
+                  : "申し訳ございませんが、ペットの同伴はできません。",
+              });
+
+              const faqSchema = {
+                "@context": "https://schema.org",
+                "@type": "FAQPage",
+                mainEntity: faqs.map((f) => ({
+                  "@type": "Question",
+                  name: f.q,
+                  acceptedAnswer: { "@type": "Answer", text: f.a },
+                })),
+              };
+
+              return (
+                <section>
+                  <JsonLd data={faqSchema} />
+                  <h2 className="text-lg font-bold text-gray-900 mb-4">よくある質問</h2>
+                  <dl className="space-y-4">
+                    {faqs.map((f) => (
+                      <div key={f.q} className="rounded-xl border border-gray-200 bg-gray-50 px-5 py-4">
+                        <dt className="text-sm font-semibold text-gray-900 mb-1">Q. {f.q}</dt>
+                        <dd className="text-sm text-gray-600">A. {f.a}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                </section>
+              );
+            })()}
           </div>
 
           {/* 右カラム：サイドバー */}

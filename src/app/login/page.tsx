@@ -1,7 +1,7 @@
 import AuthForm from "@/components/AuthForm";
 
 export const metadata = {
-  title: "ログイン | YADOKA",
+  title: "ログイン",
 };
 
 export default function LoginPage() {

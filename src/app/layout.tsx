@@ -11,8 +11,20 @@ const notoSansJP = Noto_Sans_JP({
 });
 
 export const metadata: Metadata = {
-  title: "YADOKA | 貸別荘・一棟貸し専門の検索ポータル",
-  description: "貸別荘・一棟貸し専門の検索ポータルサイト",
+  title: {
+    default: "YADOKA | 貸別荘・一棟貸し専門の検索ポータル",
+    template: "%s | YADOKA",
+  },
+  description:
+    "全国の貸別荘・一棟貸しを空き状況と料金つきで比較・検索。グループ旅行、家族旅行に最適な施設が見つかります。",
+  openGraph: {
+    siteName: "YADOKA",
+    type: "website",
+    locale: "ja_JP",
+  },
+  twitter: {
+    card: "summary_large_image",
+  },
 };
 
 export default function RootLayout({

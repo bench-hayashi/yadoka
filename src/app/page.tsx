@@ -1,6 +1,9 @@
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import SearchForm from "@/components/SearchForm";
+import JsonLd from "@/components/JsonLd";
+
+const SITE_URL = "https://yadoka.vercel.app";
 
 type Area = {
   id: string;
@@ -28,6 +31,14 @@ export default async function Home() {
 
   return (
     <>
+      <JsonLd data={{
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "YADOKA",
+        "description": "貸別荘・一棟貸し専門の検索ポータル",
+        "url": SITE_URL,
+      }} />
+
       {/* Hero */}
       <section
         className="relative overflow-hidden flex items-center min-h-[400px] sm:h-[480px]"
@@ -88,7 +99,7 @@ export default async function Home() {
             {areaList.map((area) => (
               <li key={area.id}>
                 <Link
-                  href={`/search?area=${area.slug}`}
+                  href={`/area/${area.slug}`}
                   className="block rounded-xl border border-gray-200 bg-white px-4 py-5 text-center hover:border-[#2D6A4F] hover:shadow-sm transition-all"
                 >
                   <p className="font-semibold text-gray-900">{area.name}</p>
@@ -111,7 +122,7 @@ export default async function Home() {
               {tagList.map((tag) => (
                 <li key={tag.id}>
                   <Link
-                    href={`/search?tag=${tag.slug}`}
+                    href={`/theme/${tag.slug}`}
                     className="inline-block rounded-full border border-gray-200 bg-white px-5 py-2 text-sm font-medium text-gray-700 hover:border-[#2D6A4F] hover:text-[#1B4332] transition-colors"
                   >
                     {tag.name}

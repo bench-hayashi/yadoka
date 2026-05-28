@@ -65,6 +65,9 @@ export type Facility = {
 export type FacilityDetail = Omit<Facility, "pricing_rules"> & {
   pricing_rules: PricingRuleDetail[];
   seasons: Season[];
+  address: string | null;
+  latitude: number | null;
+  longitude: number | null;
   bedrooms: number | null;
   bathrooms: number | null;
   parking_spaces: number | null;
@@ -132,6 +135,7 @@ export async function getFacilityBySlug(slug: string): Promise<FacilityDetail | 
     .from("facilities")
     .select(
       `id, name, slug, description, max_guests, is_published,
+      address, latitude, longitude,
       bedrooms, bathrooms, parking_spaces,
       checkin_time, checkout_time, min_nights,
       areas(id, name, slug, prefecture),

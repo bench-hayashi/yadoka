@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import { searchFacilities, getLowestPrice } from "@/lib/facilities";
 import { supabase } from "@/lib/supabase";
 import FacilityCard from "@/components/FacilityCard";
@@ -16,6 +17,31 @@ type Tag = {
   name: string;
   slug: string;
 };
+
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: PageSearchParams;
+}): Promise<Metadata> {
+  const { area, checkin, checkout, guests, tag } = await searchParams;
+  const parts: string[] = [];
+  if (area) parts.push(area);
+  if (tag) parts.push(tag);
+  const ci = checkin ? new Date(checkin) : null;
+  const co = checkout ? new Date(checkout) : null;
+  const dateRange =
+    ci && co
+      ? `${ci.getMonth() + 1}/${ci.getDate()}〜${co.getMonth() + 1}/${co.getDate()}`
+      : null;
+  if (dateRange) parts.push(dateRange);
+  if (guests) parts.push(`${guests}名`);
+
+  const condLabel = parts.join("・") || "全国";
+  return {
+    title: "検索結果",
+    description: `${condLabel}の貸別荘・一棟貸し検索結果。空き状況と料金をひと目で比較して、お気に入りの施設を見つけましょう。`,
+  };
+}
 
 function formatDate(dateStr: string | undefined): string | null {
   if (!dateStr) return null;
