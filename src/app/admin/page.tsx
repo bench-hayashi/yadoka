@@ -30,11 +30,19 @@ type RecentItem = {
   createdAt: string;
 };
 
+type RecentActivity = {
+  id: string;
+  name: string;
+  status: string;
+  updatedAt: string;
+};
+
 type DashboardData = {
   summary: Summary;
   pendingFacilities: PendingFacility[];
   recentInquiries: RecentItem[];
   recentReservations: RecentItem[];
+  recentActivities: RecentActivity[];
 };
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -42,6 +50,30 @@ type DashboardData = {
 function fmtDate(iso: string): string {
   const d = new Date(iso);
   return `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, "0")}/${String(d.getDate()).padStart(2, "0")}`;
+}
+
+function fmtDateTime(iso: string): string {
+  const d = new Date(iso);
+  return `${fmtDate(iso)} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+}
+
+// ── StatusBadge ───────────────────────────────────────────────────────────────
+
+const STATUS_MAP: Record<string, { label: string; className: string }> = {
+  draft:     { label: "下書き",   className: "bg-gray-100 text-gray-600" },
+  pending:   { label: "審査待ち", className: "bg-amber-100 text-amber-700" },
+  approved:  { label: "承認済",   className: "bg-green-100 text-green-700" },
+  rejected:  { label: "差し戻し", className: "bg-red-100 text-red-600" },
+  suspended: { label: "停止",     className: "bg-gray-700 text-white" },
+};
+
+function StatusBadge({ status }: { status: string }) {
+  const config = STATUS_MAP[status] ?? { label: status, className: "bg-gray-100 text-gray-600" };
+  return (
+    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${config.className}`}>
+      {config.label}
+    </span>
+  );
 }
 
 // ── SummaryCard ───────────────────────────────────────────────────────────────
@@ -81,6 +113,7 @@ export default function AdminDashboard() {
         { data: pendingFacsRaw },
         { data: recentInqRaw },
         { data: recentResRaw },
+        { data: recentActivitiesRaw },
       ] = await Promise.all([
         supabase
           .from("facilities")
@@ -127,6 +160,12 @@ export default function AdminDashboard() {
           .select("id, guest_name, created_at, facilities(id, name)")
           .order("created_at", { ascending: false })
           .limit(5),
+        // 最近の操作（updated_at 新しい順）
+        supabase
+          .from("facilities")
+          .select("id, name, status, updated_at")
+          .order("updated_at", { ascending: false })
+          .limit(5),
       ]);
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -153,6 +192,14 @@ export default function AdminDashboard() {
         createdAt: r.created_at,
       }));
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const recentActivities: RecentActivity[] = (recentActivitiesRaw ?? []).map((f: any) => ({
+        id:        f.id,
+        name:      f.name,
+        status:    f.status,
+        updatedAt: f.updated_at,
+      }));
+
       setData({
         summary: {
           totalFacilities:    totalFacilities    ?? 0,
@@ -166,6 +213,7 @@ export default function AdminDashboard() {
         pendingFacilities,
         recentInquiries,
         recentReservations,
+        recentActivities,
       });
       setLoading(false);
     }
@@ -179,7 +227,7 @@ export default function AdminDashboard() {
     );
   }
 
-  const { summary, pendingFacilities, recentInquiries, recentReservations } = data;
+  const { summary, pendingFacilities, recentInquiries, recentReservations, recentActivities } = data;
 
   return (
     <div className="space-y-8 max-w-5xl">
@@ -239,6 +287,44 @@ export default function AdminDashboard() {
                   審査する
                 </Link>
               </div>
+            ))}
+          </div>
+        )}
+      </section>
+
+      {/* 最近の操作 */}
+      <section>
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider">
+            最近の操作
+          </h2>
+          <Link
+            href="/admin/facilities"
+            className="text-xs text-[#1B4332] hover:text-[#2D6A4F] transition-colors"
+          >
+            施設一覧 →
+          </Link>
+        </div>
+        {recentActivities.length === 0 ? (
+          <div className="rounded-xl bg-white border border-gray-200 p-6 text-center">
+            <p className="text-sm text-gray-400">操作履歴がありません</p>
+          </div>
+        ) : (
+          <div className="rounded-xl bg-white border border-gray-200 overflow-hidden divide-y divide-gray-100">
+            {recentActivities.map((f) => (
+              <Link
+                key={f.id}
+                href={`/admin/facilities/${f.id}`}
+                className="flex items-center justify-between px-5 py-3.5 hover:bg-gray-50 transition-colors"
+              >
+                <div className="min-w-0 flex items-center gap-3">
+                  <StatusBadge status={f.status} />
+                  <p className="text-sm font-medium text-gray-900 truncate">{f.name}</p>
+                </div>
+                <p className="ml-4 shrink-0 text-xs text-gray-400 tabular-nums">
+                  {fmtDateTime(f.updatedAt)}
+                </p>
+              </Link>
             ))}
           </div>
         )}
