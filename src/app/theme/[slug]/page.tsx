@@ -68,7 +68,7 @@ export default async function ThemePage({ params }: { params: PageParams }) {
   const [{ data: tag }, { data: allThemeTags }] = await Promise.all([
     supabase
       .from("tags")
-      .select("id, name, slug")
+      .select("id, name, slug, description")
       .eq("slug", slug)
       .eq("category", "theme")
       .single(),
@@ -147,7 +147,8 @@ export default async function ThemePage({ params }: { params: PageParams }) {
             {tag.name}の貸別荘について
           </h2>
           <p className="text-sm leading-relaxed text-gray-600">
-            {getThemeDescription(tag.slug, tag.name)}
+            {(tag as { description?: string | null }).description ||
+              getThemeDescription(tag.slug, tag.name)}
           </p>
         </section>
 

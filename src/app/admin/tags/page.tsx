@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -13,6 +13,7 @@ type Tag = {
   slug: string;
   category: Category;
   sort_order: number;
+  description: string | null;
   usageCount: number;
 };
 
@@ -20,6 +21,7 @@ type EditForm = {
   name: string;
   slug: string;
   sort_order: string;
+  description: string;
 };
 
 type AddForm = {
@@ -76,24 +78,25 @@ export default function AdminTagsPage() {
   const [adding, setAdding]         = useState(false);
   const [addError, setAddError]     = useState<string | null>(null);
   const [editingId, setEditingId]   = useState<string | null>(null);
-  const [editForm, setEditForm]     = useState<EditForm>({ name: "", slug: "", sort_order: "0" });
+  const [editForm, setEditForm]     = useState<EditForm>({ name: "", slug: "", sort_order: "0", description: "" });
   const [saving, setSaving]         = useState(false);
   const [editError, setEditError]   = useState<string | null>(null);
 
   async function loadTags() {
     const { data } = await supabase
       .from("tags")
-      .select("id, name, slug, category, sort_order, facility_tags(facility_id)")
+      .select("id, name, slug, category, sort_order, description, facility_tags(facility_id)")
       .order("sort_order", { ascending: true });
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     setTags((data ?? []).map((t: any) => ({
-      id:         t.id,
-      name:       t.name,
-      slug:       t.slug,
-      category:   t.category,
-      sort_order: t.sort_order ?? 0,
-      usageCount: Array.isArray(t.facility_tags) ? t.facility_tags.length : 0,
+      id:          t.id,
+      name:        t.name,
+      slug:        t.slug,
+      category:    t.category,
+      sort_order:  t.sort_order ?? 0,
+      description: t.description ?? null,
+      usageCount:  Array.isArray(t.facility_tags) ? t.facility_tags.length : 0,
     })));
     setLoading(false);
   }
@@ -143,7 +146,7 @@ export default function AdminTagsPage() {
 
   function startEdit(tag: Tag) {
     setEditingId(tag.id);
-    setEditForm({ name: tag.name, slug: tag.slug, sort_order: String(tag.sort_order) });
+    setEditForm({ name: tag.name, slug: tag.slug, sort_order: String(tag.sort_order), description: tag.description ?? "" });
     setEditError(null);
   }
 
@@ -161,7 +164,7 @@ export default function AdminTagsPage() {
     setSaving(true);
     const { error } = await supabase
       .from("tags")
-      .update({ name, slug, sort_order })
+      .update({ name, slug, sort_order, description: editForm.description.trim() || null })
       .eq("id", id);
 
     if (error) {
@@ -312,90 +315,119 @@ export default function AdminTagsPage() {
                   {cat.items.map(tag => {
                     const isEditing = editingId === tag.id;
                     return (
-                      <tr key={tag.id} className={`transition-colors ${isEditing ? "bg-amber-50" : "hover:bg-gray-50"}`}>
-                        {isEditing ? (
-                          <>
-                            {/* 編集行 */}
-                            <td className="px-4 py-3">
-                              <input
-                                type="text"
-                                value={editForm.name}
-                                onChange={e => { setEditForm(f => ({ ...f, name: e.target.value })); setEditError(null); }}
-                                className="w-full h-8 rounded-md border border-gray-300 bg-white px-2 text-sm focus:border-[#1B4332] focus:outline-none focus:ring-1 focus:ring-[#1B4332]"
-                              />
-                            </td>
-                            <td className="px-4 py-3 hidden sm:table-cell">
-                              <input
-                                type="text"
-                                value={editForm.slug}
-                                onChange={e => setEditForm(f => ({ ...f, slug: e.target.value }))}
-                                placeholder="空欄で自動生成"
-                                className="w-full h-8 rounded-md border border-gray-300 bg-white px-2 text-sm focus:border-[#1B4332] focus:outline-none focus:ring-1 focus:ring-[#1B4332]"
-                              />
-                            </td>
-                            <td className="px-4 py-3 hidden md:table-cell">
-                              <input
-                                type="number"
-                                value={editForm.sort_order}
-                                onChange={e => setEditForm(f => ({ ...f, sort_order: e.target.value }))}
-                                className="w-20 h-8 rounded-md border border-gray-300 bg-white px-2 text-sm focus:border-[#1B4332] focus:outline-none focus:ring-1 focus:ring-[#1B4332]"
-                              />
-                            </td>
-                            <td className="px-4 py-3">
-                              {editError && <p className="text-xs text-red-600 mb-1">{editError}</p>}
-                            </td>
-                            <td className="px-4 py-3">
-                              <div className="flex items-center gap-2 justify-end">
-                                <button
-                                  type="button"
-                                  onClick={() => handleSave(tag.id)}
-                                  disabled={saving}
-                                  className="rounded-md bg-[#1B4332] px-3 py-1.5 text-xs font-medium text-white hover:bg-[#2D6A4F] transition-colors disabled:opacity-50 whitespace-nowrap"
-                                >
-                                  {saving ? "保存中" : "保存"}
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={cancelEdit}
-                                  className="rounded-md border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors"
-                                >
-                                  キャンセル
-                                </button>
+                      <Fragment key={tag.id}>
+                        <tr className={`transition-colors ${isEditing ? "bg-amber-50" : "hover:bg-gray-50"}`}>
+                          {isEditing ? (
+                            <>
+                              {/* 編集行 */}
+                              <td className="px-4 py-3">
+                                <input
+                                  type="text"
+                                  value={editForm.name}
+                                  onChange={e => { setEditForm(f => ({ ...f, name: e.target.value })); setEditError(null); }}
+                                  className="w-full h-8 rounded-md border border-gray-300 bg-white px-2 text-sm focus:border-[#1B4332] focus:outline-none focus:ring-1 focus:ring-[#1B4332]"
+                                />
+                              </td>
+                              <td className="px-4 py-3 hidden sm:table-cell">
+                                <input
+                                  type="text"
+                                  value={editForm.slug}
+                                  onChange={e => setEditForm(f => ({ ...f, slug: e.target.value }))}
+                                  placeholder="空欄で自動生成"
+                                  className="w-full h-8 rounded-md border border-gray-300 bg-white px-2 text-sm focus:border-[#1B4332] focus:outline-none focus:ring-1 focus:ring-[#1B4332]"
+                                />
+                              </td>
+                              <td className="px-4 py-3 hidden md:table-cell">
+                                <input
+                                  type="number"
+                                  value={editForm.sort_order}
+                                  onChange={e => setEditForm(f => ({ ...f, sort_order: e.target.value }))}
+                                  className="w-20 h-8 rounded-md border border-gray-300 bg-white px-2 text-sm focus:border-[#1B4332] focus:outline-none focus:ring-1 focus:ring-[#1B4332]"
+                                />
+                              </td>
+                              <td className="px-4 py-3">
+                                {editError && <p className="text-xs text-red-600 mb-1">{editError}</p>}
+                              </td>
+                              <td className="px-4 py-3">
+                                <div className="flex items-center gap-2 justify-end">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleSave(tag.id)}
+                                    disabled={saving}
+                                    className="rounded-md bg-[#1B4332] px-3 py-1.5 text-xs font-medium text-white hover:bg-[#2D6A4F] transition-colors disabled:opacity-50 whitespace-nowrap"
+                                  >
+                                    {saving ? "保存中" : "保存"}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={cancelEdit}
+                                    className="rounded-md border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+                                  >
+                                    キャンセル
+                                  </button>
+                                </div>
+                              </td>
+                            </>
+                          ) : (
+                            <>
+                              {/* 通常行 */}
+                              <td className="px-4 py-3">
+                                <p className="font-medium text-gray-900">{tag.name}</p>
+                                {tag.description && (
+                                  <p className="text-xs text-gray-400 mt-0.5 line-clamp-1">{tag.description}</p>
+                                )}
+                              </td>
+                              <td className="px-4 py-3 text-gray-400 font-mono text-xs hidden sm:table-cell">{tag.slug}</td>
+                              <td className="px-4 py-3 text-gray-500 tabular-nums hidden md:table-cell">{tag.sort_order}</td>
+                              <td className="px-4 py-3">
+                                <span className={`text-xs font-medium tabular-nums ${tag.usageCount > 0 ? "text-gray-700" : "text-gray-400"}`}>
+                                  {tag.usageCount} 件
+                                </span>
+                              </td>
+                              <td className="px-4 py-3">
+                                <div className="flex items-center gap-2 justify-end">
+                                  <button
+                                    type="button"
+                                    onClick={() => startEdit(tag)}
+                                    className="rounded-md border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+                                  >
+                                    編集
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDelete(tag)}
+                                    className="rounded-md border border-red-200 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 transition-colors"
+                                  >
+                                    削除
+                                  </button>
+                                </div>
+                              </td>
+                            </>
+                          )}
+                        </tr>
+                        {/* 説明文展開行（編集時のみ） */}
+                        {isEditing && (
+                          <tr className="bg-amber-50">
+                            <td colSpan={5} className="px-4 pb-4">
+                              <div className="space-y-1">
+                                <label className="text-xs font-medium text-gray-500">
+                                  説明文（テーマページのSEO用テキスト）
+                                </label>
+                                <textarea
+                                  value={editForm.description}
+                                  onChange={e => setEditForm(f => ({ ...f, description: e.target.value }))}
+                                  rows={3}
+                                  placeholder="テーマの特徴や魅力を記載してください（150〜300文字程度）"
+                                  className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-400 resize-none focus:border-[#1B4332] focus:outline-none focus:ring-1 focus:ring-[#1B4332]"
+                                />
+                                <p className="text-xs text-gray-400 text-right">
+                                  {editForm.description.length} 文字
+                                </p>
                               </div>
                             </td>
-                          </>
-                        ) : (
-                          <>
-                            {/* 通常行 */}
-                            <td className="px-4 py-3 font-medium text-gray-900">{tag.name}</td>
-                            <td className="px-4 py-3 text-gray-400 font-mono text-xs hidden sm:table-cell">{tag.slug}</td>
-                            <td className="px-4 py-3 text-gray-500 tabular-nums hidden md:table-cell">{tag.sort_order}</td>
-                            <td className="px-4 py-3">
-                              <span className={`text-xs font-medium tabular-nums ${tag.usageCount > 0 ? "text-gray-700" : "text-gray-400"}`}>
-                                {tag.usageCount} 件
-                              </span>
-                            </td>
-                            <td className="px-4 py-3">
-                              <div className="flex items-center gap-2 justify-end">
-                                <button
-                                  type="button"
-                                  onClick={() => startEdit(tag)}
-                                  className="rounded-md border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors"
-                                >
-                                  編集
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => handleDelete(tag)}
-                                  className="rounded-md border border-red-200 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 transition-colors"
-                                >
-                                  削除
-                                </button>
-                              </div>
-                            </td>
-                          </>
+                          </tr>
                         )}
-                      </tr>
+                      </Fragment>
                     );
                   })}
                 </tbody>

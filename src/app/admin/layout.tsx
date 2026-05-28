@@ -13,6 +13,7 @@ const NAV_ITEMS = [
   { href: "/admin/facilities",  label: "施設審査" },
   { href: "/admin/users",       label: "ユーザー管理" },
   { href: "/admin/tags",        label: "タグ管理" },
+  { href: "/admin/areas",       label: "エリア管理" },
 ] as const;
 
 // ── NavLinks ──────────────────────────────────────────────────────────────────

@@ -62,7 +62,7 @@ export default async function AreaPage({ params }: { params: PageParams }) {
   const { slug } = await params;
 
   const [{ data: area }, { data: allAreas }] = await Promise.all([
-    supabase.from("areas").select("id, name, slug, prefecture, sort_order").eq("slug", slug).single(),
+    supabase.from("areas").select("id, name, slug, prefecture, sort_order, description").eq("slug", slug).single(),
     supabase.from("areas").select("id, name, slug, prefecture, sort_order").order("sort_order"),
   ]);
 
@@ -201,12 +201,9 @@ export default async function AreaPage({ params }: { params: PageParams }) {
             {area.name}エリアの貸別荘について
           </h2>
           <p className="text-sm leading-relaxed text-gray-600">
-            {area.name}エリアは、豊かな自然に囲まれた人気のバケーションエリアです。
-            仲間や家族とのプライベートな時間を過ごすのに最適な一棟貸しの宿が多数揃っています。
-            広々としたリビングや専用の庭・テラスを備えた施設では、BBQや星空観察など、
-            ホテルでは体験できない特別なひとときをお楽しみいただけます。
-            チェックイン・チェックアウト時間や最大宿泊人数など、各施設の詳細をご確認のうえ、
-            ご家族やグループのご旅行にぴったりの施設をお探しください。
+            {(area as { description?: string | null }).description ||
+              `${area.name}エリアは、豊かな自然に囲まれた人気のバケーションエリアです。仲間や家族とのプライベートな時間を過ごすのに最適な一棟貸しの宿が多数揃っています。広々としたリビングや専用の庭・テラスを備えた施設では、BBQや星空観察など、ホテルでは体験できない特別なひとときをお楽しみいただけます。チェックイン・チェックアウト時間や最大宿泊人数など、各施設の詳細をご確認のうえ、ご家族やグループのご旅行にぴったりの施設をお探しください。`
+            }
           </p>
         </section>
 
