@@ -55,6 +55,11 @@ export default function Header() {
                 施設管理
               </Link>
             )}
+            {role === "admin" && (
+              <Link href="/admin" className="text-sm text-[#1B4332] font-medium hover:text-[#2D6A4F] transition-colors">
+                管理パネル
+              </Link>
+            )}
             {user ? (
               <div className="flex items-center gap-3">
                 <span className="text-sm text-gray-700">
@@ -113,6 +118,15 @@ export default function Header() {
                 onClick={() => setMenuOpen(false)}
               >
                 施設管理
+              </Link>
+            )}
+            {role === "admin" && (
+              <Link
+                href="/admin"
+                className="text-sm text-[#1B4332] font-medium hover:text-[#2D6A4F] py-2 transition-colors"
+                onClick={() => setMenuOpen(false)}
+              >
+                管理パネル
               </Link>
             )}
             {user ? (
