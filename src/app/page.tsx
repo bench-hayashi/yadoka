@@ -1,7 +1,10 @@
 import Link from "next/link";
+import Image from "next/image";
 import { supabase } from "@/lib/supabase";
 import SearchForm from "@/components/SearchForm";
 import JsonLd from "@/components/JsonLd";
+import { getImageUrl } from "@/lib/cloudinary";
+import TagIcon from "@/components/TagIcon";
 
 const SITE_URL = "https://yadoka.vercel.app";
 
@@ -11,6 +14,7 @@ type Area = {
   prefecture: string;
   slug: string;
   sort_order: number;
+  image_url: string | null;
 };
 
 type Tag = {
@@ -18,12 +22,14 @@ type Tag = {
   name: string;
   slug: string;
   category: string;
+  image_url: string | null;
+  icon_name: string | null;
 };
 
 export default async function Home() {
   const [{ data: areas }, { data: tags }] = await Promise.all([
-    supabase.from("areas").select("id, name, prefecture, slug, sort_order").order("sort_order"),
-    supabase.from("tags").select("id, name, slug, category").eq("category", "theme"),
+    supabase.from("areas").select("id, name, prefecture, slug, sort_order, image_url").order("sort_order"),
+    supabase.from("tags").select("id, name, slug, category, image_url, icon_name").eq("category", "theme"),
   ]);
 
   const areaList: Area[] = areas ?? [];
@@ -45,12 +51,16 @@ export default async function Home() {
         style={{ background: "linear-gradient(135deg, #0d2818 0%, #1B4332 40%, #2D6A4F 100%)" }}
       >
         {/* 背景画像（右側透かし） */}
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="https://images.unsplash.com/photo-1449158743715-0a90ebb6d2d8?w=1200"
-          alt=""
-          className="absolute top-0 right-0 h-full object-cover opacity-30 pointer-events-none w-full sm:w-[60%]"
-        />
+        <div className="absolute top-0 right-0 h-full w-full sm:w-[60%]">
+          <Image
+            src="https://images.unsplash.com/photo-1449158743715-0a90ebb6d2d8"
+            alt=""
+            fill
+            className="object-cover opacity-30 pointer-events-none"
+            priority
+            sizes="(max-width: 640px) 100vw, 60vw"
+          />
+        </div>
 
         {/* メインコンテンツ */}
         <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-0">
@@ -100,10 +110,32 @@ export default async function Home() {
               <li key={area.id}>
                 <Link
                   href={`/area/${area.slug}`}
-                  className="block rounded-xl border border-gray-200 bg-white px-4 py-5 text-center hover:border-[#2D6A4F] hover:shadow-sm transition-all"
+                  className="group block rounded-xl overflow-hidden hover:shadow-md transition-shadow"
                 >
-                  <p className="font-semibold text-gray-900">{area.name}</p>
-                  <p className="mt-1 text-xs text-gray-400">{area.prefecture}</p>
+                  {/* アスペクト比固定でCLS防止 */}
+                  <div className="relative aspect-[3/2]">
+                    {area.image_url && (
+                      <Image
+                        src={getImageUrl(area.image_url, { width: 400 })}
+                        alt={area.name}
+                        fill
+                        sizes="(max-width: 768px) 50vw, 25vw"
+                        className="object-cover transition-transform duration-300 group-hover:scale-105"
+                        loading="lazy"
+                      />
+                    )}
+                    {/* オーバーレイ：画像あり→グラデーション、なし→グリーン単色 */}
+                    <div
+                      className={`absolute inset-0 flex flex-col justify-end p-3 ${
+                        area.image_url
+                          ? "bg-gradient-to-t from-black/65 via-black/20 to-transparent"
+                          : "bg-[#1B4332]"
+                      }`}
+                    >
+                      <p className="text-white font-semibold text-sm leading-tight">{area.name}</p>
+                      <p className="text-white/75 text-xs mt-0.5">{area.prefecture}</p>
+                    </div>
+                  </div>
                 </Link>
               </li>
             ))}
@@ -121,12 +153,36 @@ export default async function Home() {
             <ul className="flex flex-wrap gap-3">
               {tagList.map((tag) => (
                 <li key={tag.id}>
-                  <Link
-                    href={`/theme/${tag.slug}`}
-                    className="inline-block rounded-full border border-gray-200 bg-white px-5 py-2 text-sm font-medium text-gray-700 hover:border-[#2D6A4F] hover:text-[#1B4332] transition-colors"
-                  >
-                    {tag.name}
-                  </Link>
+                  {tag.image_url ? (
+                    <Link
+                      href={`/theme/${tag.slug}`}
+                      className="group flex items-center gap-2.5 rounded-xl border border-gray-200 bg-white pl-1 pr-4 py-1 hover:border-[#2D6A4F] hover:shadow-sm transition-all"
+                    >
+                      <div className="relative h-8 w-8 rounded-lg overflow-hidden shrink-0">
+                        <Image
+                          src={getImageUrl(tag.image_url, { width: 64 })}
+                          alt=""
+                          fill
+                          sizes="32px"
+                          className="object-cover"
+                          loading="lazy"
+                        />
+                      </div>
+                      <span className="text-sm font-medium text-gray-700 group-hover:text-[#1B4332] transition-colors">
+                        {tag.name}
+                      </span>
+                    </Link>
+                  ) : (
+                    <Link
+                      href={`/theme/${tag.slug}`}
+                      className="group flex items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:border-[#2D6A4F] hover:text-[#1B4332] transition-colors"
+                    >
+                      {tag.icon_name && (
+                        <TagIcon iconName={tag.icon_name} size={15} className="text-gray-400 group-hover:text-[#2D6A4F] transition-colors" />
+                      )}
+                      {tag.name}
+                    </Link>
+                  )}
                 </li>
               ))}
             </ul>

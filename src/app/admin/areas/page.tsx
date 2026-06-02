@@ -12,6 +12,7 @@ type Area = {
   prefecture: string;
   sort_order: number;
   description: string | null;
+  image_url: string | null;
 };
 
 type EditForm = {
@@ -20,6 +21,7 @@ type EditForm = {
   prefecture: string;
   sort_order: string;
   description: string;
+  image_url: string;
 };
 
 // ── Toast ─────────────────────────────────────────────────────────────────────
@@ -44,7 +46,7 @@ export default function AdminAreasPage() {
   const [toast, setToast]         = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm]   = useState<EditForm>({
-    name: "", slug: "", prefecture: "", sort_order: "0", description: "",
+    name: "", slug: "", prefecture: "", sort_order: "0", description: "", image_url: "",
   });
   const [saving, setSaving]       = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
@@ -52,7 +54,7 @@ export default function AdminAreasPage() {
   async function loadAreas() {
     const { data } = await supabase
       .from("areas")
-      .select("id, name, slug, prefecture, sort_order, description")
+      .select("id, name, slug, prefecture, sort_order, description, image_url")
       .order("sort_order", { ascending: true });
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     setAreas((data ?? []).map((a: any) => ({
@@ -62,6 +64,7 @@ export default function AdminAreasPage() {
       prefecture:  a.prefecture ?? "",
       sort_order:  a.sort_order ?? 0,
       description: a.description ?? null,
+      image_url:   a.image_url ?? null,
     })));
     setLoading(false);
   }
@@ -78,6 +81,7 @@ export default function AdminAreasPage() {
       prefecture:  area.prefecture,
       sort_order:  String(area.sort_order),
       description: area.description ?? "",
+      image_url:   area.image_url ?? "",
     });
     setEditError(null);
   }
@@ -102,6 +106,7 @@ export default function AdminAreasPage() {
         prefecture:  editForm.prefecture.trim(),
         sort_order:  parseInt(editForm.sort_order, 10) || 0,
         description: editForm.description.trim() || null,
+        image_url:   editForm.image_url.trim() || null,
       })
       .eq("id", id);
 
@@ -184,6 +189,16 @@ export default function AdminAreasPage() {
                         className="w-full h-9 rounded-lg border border-gray-300 bg-white px-3 text-sm focus:border-[#1B4332] focus:outline-none focus:ring-1 focus:ring-[#1B4332]"
                       />
                     </div>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium text-gray-500">画像URL</label>
+                    <input
+                      type="url"
+                      value={editForm.image_url}
+                      onChange={e => setEditForm(f => ({ ...f, image_url: e.target.value }))}
+                      placeholder="https://images.unsplash.com/... または Cloudinary URL"
+                      className="w-full h-9 rounded-lg border border-gray-300 bg-white px-3 text-sm focus:border-[#1B4332] focus:outline-none focus:ring-1 focus:ring-[#1B4332]"
+                    />
                   </div>
                   <div className="space-y-1">
                     <label className="text-xs font-medium text-gray-500">説明文（SEO用）</label>

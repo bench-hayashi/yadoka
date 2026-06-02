@@ -4,10 +4,10 @@ import type { Metadata } from "next";
 import { getFacilityBySlug, getAvailability, getLowestPrice } from "@/lib/facilities";
 import PhotoGallery from "@/components/PhotoGallery";
 import PricingTable from "@/components/PricingTable";
-import AvailabilityCalendar from "@/components/AvailabilityCalendar";
-import PriceSimulator from "@/components/PriceSimulator";
 import FavoriteButton from "@/components/FavoriteButton";
 import JsonLd from "@/components/JsonLd";
+import { LazyAvailabilityCalendar as AvailabilityCalendar, LazyPriceSimulator as PriceSimulator } from "@/components/LazyComponents";
+import TagIcon from "@/components/TagIcon";
 
 const SITE_URL = "https://yadoka.vercel.app";
 
@@ -73,7 +73,7 @@ export default async function FacilityPage({ params }: Props) {
   }));
 
   // タグをカテゴリ別にグループ化
-  const tagsByCategory = new Map<string, { id: string; name: string; slug: string }[]>();
+  const tagsByCategory = new Map<string, { id: string; name: string; slug: string; icon_name: string | null }[]>();
   for (const ft of facility.facility_tags) {
     const { category, ...tag } = ft.tags;
     if (!tagsByCategory.has(category)) tagsByCategory.set(category, []);
@@ -172,8 +172,11 @@ export default async function FacilityPage({ params }: Props) {
                         {tagsByCategory.get(cat)!.map((tag) => (
                           <span
                             key={tag.id}
-                            className="rounded-full border border-gray-200 px-3 py-1 text-sm text-gray-700"
+                            className="flex items-center gap-1.5 rounded-full border border-gray-200 px-3 py-1 text-sm text-gray-700"
                           >
+                            {tag.icon_name && (
+                              <TagIcon iconName={tag.icon_name} size={14} className="text-gray-400 shrink-0" />
+                            )}
                             {tag.name}
                           </span>
                         ))}

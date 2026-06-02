@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import Image from "next/image";
+import { getOptimizedUrl } from "@/lib/cloudinary";
 
 type Photo = {
   url: string;
@@ -55,7 +56,7 @@ export default function PhotoGallery({ photos }: Props) {
             aria-label={main.alt_text ?? "メイン画像を拡大"}
           >
             <Image
-              src={main.url}
+              src={getOptimizedUrl(main.url, { width: 1280 })}
               alt={main.alt_text ?? ""}
               fill
               sizes="(max-width: 1280px) 50vw, 640px"
@@ -76,11 +77,12 @@ export default function PhotoGallery({ photos }: Props) {
                   aria-label={photo.alt_text ?? `画像${i + 2}を拡大`}
                 >
                   <Image
-                    src={photo.url}
+                    src={getOptimizedUrl(photo.url, { width: 640 })}
                     alt={photo.alt_text ?? ""}
                     fill
                     sizes="(max-width: 1280px) 25vw, 320px"
                     className="object-cover transition-transform duration-300 group-hover:scale-105"
+                    loading="lazy"
                   />
                   {/* 最後のセルで表示されていない画像がある場合は枚数オーバーレイ */}
                   {i === 3 && photos.length > 5 && (
@@ -106,7 +108,7 @@ export default function PhotoGallery({ photos }: Props) {
             aria-label={main.alt_text ?? "画像を拡大"}
           >
             <Image
-              src={main.url}
+              src={getOptimizedUrl(main.url, { width: 1080 })}
               alt={main.alt_text ?? ""}
               fill
               sizes="100vw"
@@ -166,7 +168,7 @@ export default function PhotoGallery({ photos }: Props) {
             onClick={(e) => e.stopPropagation()}
           >
             <Image
-              src={photos[modalIndex].url}
+              src={getOptimizedUrl(photos[modalIndex].url, { width: 1920 })}
               alt={photos[modalIndex].alt_text ?? ""}
               fill
               sizes="(max-width: 640px) calc(100vw - 128px), (max-width: 1280px) calc(100vw - 192px), 1024px"

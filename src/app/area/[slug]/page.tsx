@@ -6,6 +6,8 @@ import { searchFacilities, getLowestPrice } from "@/lib/facilities";
 import FacilityCard from "@/components/FacilityCard";
 import JsonLd from "@/components/JsonLd";
 
+export const revalidate = 3600;
+
 const SITE_URL = "https://yadoka.vercel.app";
 
 // ── Types ─────────────────────────────────────────────────────────────────────

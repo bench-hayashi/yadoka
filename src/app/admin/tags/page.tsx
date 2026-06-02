@@ -2,6 +2,13 @@
 
 import { Fragment, useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import TagIcon from "@/components/TagIcon";
+
+const ICON_OPTIONS = [
+  "dog", "flame", "wifi", "car", "bath", "waves", "utensils", "wind",
+  "users", "heart", "home", "mountain", "tag", "star", "tree-pine",
+  "snowflake", "sun", "tv", "coffee", "key",
+] as const;
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -14,6 +21,8 @@ type Tag = {
   category: Category;
   sort_order: number;
   description: string | null;
+  image_url: string | null;
+  icon_name: string | null;
   usageCount: number;
 };
 
@@ -22,6 +31,8 @@ type EditForm = {
   slug: string;
   sort_order: string;
   description: string;
+  image_url: string;
+  icon_name: string;
 };
 
 type AddForm = {
@@ -78,14 +89,14 @@ export default function AdminTagsPage() {
   const [adding, setAdding]         = useState(false);
   const [addError, setAddError]     = useState<string | null>(null);
   const [editingId, setEditingId]   = useState<string | null>(null);
-  const [editForm, setEditForm]     = useState<EditForm>({ name: "", slug: "", sort_order: "0", description: "" });
+  const [editForm, setEditForm]     = useState<EditForm>({ name: "", slug: "", sort_order: "0", description: "", image_url: "", icon_name: "" });
   const [saving, setSaving]         = useState(false);
   const [editError, setEditError]   = useState<string | null>(null);
 
   async function loadTags() {
     const { data } = await supabase
       .from("tags")
-      .select("id, name, slug, category, sort_order, description, facility_tags(facility_id)")
+      .select("id, name, slug, category, sort_order, description, image_url, icon_name, facility_tags(facility_id)")
       .order("sort_order", { ascending: true });
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -96,6 +107,8 @@ export default function AdminTagsPage() {
       category:    t.category,
       sort_order:  t.sort_order ?? 0,
       description: t.description ?? null,
+      image_url:   t.image_url ?? null,
+      icon_name:   t.icon_name ?? null,
       usageCount:  Array.isArray(t.facility_tags) ? t.facility_tags.length : 0,
     })));
     setLoading(false);
@@ -146,7 +159,7 @@ export default function AdminTagsPage() {
 
   function startEdit(tag: Tag) {
     setEditingId(tag.id);
-    setEditForm({ name: tag.name, slug: tag.slug, sort_order: String(tag.sort_order), description: tag.description ?? "" });
+    setEditForm({ name: tag.name, slug: tag.slug, sort_order: String(tag.sort_order), description: tag.description ?? "", image_url: tag.image_url ?? "", icon_name: tag.icon_name ?? "" });
     setEditError(null);
   }
 
@@ -164,7 +177,14 @@ export default function AdminTagsPage() {
     setSaving(true);
     const { error } = await supabase
       .from("tags")
-      .update({ name, slug, sort_order, description: editForm.description.trim() || null })
+      .update({
+        name,
+        slug,
+        sort_order,
+        description: editForm.description.trim() || null,
+        image_url:   editForm.image_url.trim() || null,
+        icon_name:   editForm.icon_name.trim() || null,
+      })
       .eq("id", id);
 
     if (error) {
@@ -372,7 +392,12 @@ export default function AdminTagsPage() {
                             <>
                               {/* 通常行 */}
                               <td className="px-4 py-3">
-                                <p className="font-medium text-gray-900">{tag.name}</p>
+                                <div className="flex items-center gap-2">
+                                  {tag.icon_name && (
+                                    <TagIcon iconName={tag.icon_name} size={16} className="text-gray-500 shrink-0" />
+                                  )}
+                                  <p className="font-medium text-gray-900">{tag.name}</p>
+                                </div>
                                 {tag.description && (
                                   <p className="text-xs text-gray-400 mt-0.5 line-clamp-1">{tag.description}</p>
                                 )}
@@ -408,7 +433,55 @@ export default function AdminTagsPage() {
                         {/* 説明文展開行（編集時のみ） */}
                         {isEditing && (
                           <tr className="bg-amber-50">
-                            <td colSpan={5} className="px-4 pb-4">
+                            <td colSpan={5} className="px-4 pb-4 space-y-3">
+                              {/* アイコン選択 */}
+                              <div className="space-y-2">
+                                <div className="flex items-center gap-3">
+                                  <label className="text-xs font-medium text-gray-500">アイコン</label>
+                                  {editForm.icon_name && (
+                                    <>
+                                      <span className="flex items-center gap-1.5 text-xs text-gray-700 bg-gray-100 rounded px-2 py-0.5">
+                                        <TagIcon iconName={editForm.icon_name} size={14} />
+                                        {editForm.icon_name}
+                                      </span>
+                                      <button
+                                        type="button"
+                                        onClick={() => setEditForm(f => ({ ...f, icon_name: "" }))}
+                                        className="text-xs text-gray-400 hover:text-red-500 transition-colors"
+                                      >
+                                        解除
+                                      </button>
+                                    </>
+                                  )}
+                                </div>
+                                <div className="flex flex-wrap gap-1.5">
+                                  {ICON_OPTIONS.map((name) => (
+                                    <button
+                                      key={name}
+                                      type="button"
+                                      onClick={() => setEditForm(f => ({ ...f, icon_name: name }))}
+                                      title={name}
+                                      className={`p-2 rounded-lg border transition-colors ${
+                                        editForm.icon_name === name
+                                          ? "border-[#1B4332] bg-[#D8F3DC] text-[#1B4332]"
+                                          : "border-gray-200 text-gray-500 hover:border-gray-400 hover:text-gray-700"
+                                      }`}
+                                    >
+                                      <TagIcon iconName={name} size={18} />
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+                              <div className="space-y-1">
+                                <label className="text-xs font-medium text-gray-500">画像URL</label>
+                                <input
+                                  type="url"
+                                  value={editForm.image_url}
+                                  onChange={e => setEditForm(f => ({ ...f, image_url: e.target.value }))}
+                                  placeholder="https://images.unsplash.com/... または Cloudinary URL"
+                                  className="w-full h-9 rounded-lg border border-gray-300 bg-white px-3 text-sm focus:border-[#1B4332] focus:outline-none focus:ring-1 focus:ring-[#1B4332]"
+                                />
+                              </div>
                               <div className="space-y-1">
                                 <label className="text-xs font-medium text-gray-500">
                                   説明文（テーマページのSEO用テキスト）

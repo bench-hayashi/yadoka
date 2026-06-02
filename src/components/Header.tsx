@@ -45,7 +45,7 @@ export default function Header() {
 
           <nav className="hidden md:flex items-center gap-6">
             <Link href="/search" className="text-sm text-gray-600 hover:text-gray-900 transition-colors">
-              エリアから探す
+              施設を探す
             </Link>
             <Link href="/favorites" className="text-sm text-gray-600 hover:text-gray-900 transition-colors">
               お気に入り
@@ -102,7 +102,7 @@ export default function Header() {
               className="text-sm text-gray-600 hover:text-gray-900 py-2 transition-colors"
               onClick={() => setMenuOpen(false)}
             >
-              エリアから探す
+              施設を探す
             </Link>
             <Link
               href="/favorites"

@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Noto_Sans_JP } from "next/font/google";
 import "./globals.css";
 import Header from "@/components/Header";
@@ -6,9 +6,17 @@ import Footer from "@/components/Footer";
 import AuthProvider from "@/components/AuthProvider";
 
 const notoSansJP = Noto_Sans_JP({
+  weight: ["400", "500", "700"],
   subsets: ["latin"],
+  display: "swap",
   variable: "--font-noto-sans-jp",
 });
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  themeColor: "#1B4332",
+};
 
 export const metadata: Metadata = {
   title: {

@@ -5,6 +5,8 @@ import { supabase } from "@/lib/supabase";
 import { searchFacilities, getLowestPrice } from "@/lib/facilities";
 import FacilityCard from "@/components/FacilityCard";
 
+export const revalidate = 3600;
+
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 type PageParams = Promise<{ slug: string }>;

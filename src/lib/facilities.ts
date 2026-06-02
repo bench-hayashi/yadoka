@@ -16,6 +16,7 @@ export type FacilityTag = {
     name: string;
     slug: string;
     category: string;
+    icon_name: string | null;
   };
 };
 
@@ -77,7 +78,7 @@ export type FacilityDetail = Omit<Facility, "pricing_rules"> & {
 };
 
 export type SearchParams = {
-  area?: string;
+  area?: string | string[];
   checkin?: string;
   checkout?: string;
   guests?: number;
@@ -87,26 +88,32 @@ export type SearchParams = {
 export async function searchFacilities(params: SearchParams): Promise<Facility[]> {
   const { area, guests, tag } = params;
 
+  const areas = area ? (Array.isArray(area) ? area : [area]) : [];
+  const hasArea = areas.length > 0;
+
   // Build the select string. Use !inner on areas/facility_tags when filtering
   // by their slugs so that rows without a match are excluded from results.
-  const areaSelect = area ? "areas!inner(id, name, slug, prefecture)" : "areas(id, name, slug, prefecture)";
+  const areaSelect = hasArea ? "areas!inner(name, slug)" : "areas(name, slug)";
   const tagSelect = tag
-    ? "facility_tags!inner(tags!inner(id, name, slug))"
-    : "facility_tags(tags(id, name, slug))";
+    ? "facility_tags!inner(tags!inner(name, slug))"
+    : "facility_tags(tags(name, slug))";
 
+  // Only fetch columns needed for the card list. Add .range(offset, offset+19)
+  // here when pagination is implemented.
   let query = supabase
     .from("facilities")
     .select(
-      `id, name, slug, description, max_guests, is_published,
+      `id, name, slug, max_guests,
       ${areaSelect},
-      facility_images(id, url, is_hero),
+      facility_images(url, is_hero),
       ${tagSelect},
-      pricing_rules(id, price_per_night)`
+      pricing_rules(price_per_night)`
     )
-    .eq("is_published", true);
+    .eq("is_published", true)
+    .limit(20);
 
-  if (area) {
-    query = query.eq("areas.slug", area);
+  if (hasArea) {
+    query = query.in("areas.slug", areas);
   }
 
   if (guests) {
@@ -140,7 +147,7 @@ export async function getFacilityBySlug(slug: string): Promise<FacilityDetail | 
       checkin_time, checkout_time, min_nights,
       areas(id, name, slug, prefecture),
       facility_images(id, url, alt_text, is_hero, sort_order),
-      facility_tags(tags(id, name, slug, category)),
+      facility_tags(tags(id, name, slug, category, icon_name)),
       pricing_rules(id, season, day_type, price_per_night),
       seasons(id, name, start_date, end_date)`
     )

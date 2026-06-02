@@ -3,19 +3,24 @@ import type { Metadata } from "next";
 import { searchFacilities, getLowestPrice } from "@/lib/facilities";
 import { supabase } from "@/lib/supabase";
 import FacilityCard from "@/components/FacilityCard";
+import AreaFilter from "@/components/AreaFilter";
+import TagIcon from "@/components/TagIcon";
 
 type PageSearchParams = Promise<{
-  area?: string;
+  area?: string | string[];
   checkin?: string;
   checkout?: string;
   guests?: string;
   tag?: string;
 }>;
 
+type AreaOption = { id: string; name: string; slug: string };
+
 type Tag = {
   id: string;
   name: string;
   slug: string;
+  icon_name: string | null;
 };
 
 export async function generateMetadata({
@@ -25,7 +30,8 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { area, checkin, checkout, guests, tag } = await searchParams;
   const parts: string[] = [];
-  if (area) parts.push(area);
+  const areaStr = Array.isArray(area) ? area.join("・") : area;
+  if (areaStr) parts.push(areaStr);
   if (tag) parts.push(tag);
   const ci = checkin ? new Date(checkin) : null;
   const co = checkout ? new Date(checkout) : null;
@@ -51,13 +57,14 @@ function formatDate(dateStr: string | undefined): string | null {
 }
 
 function buildConditionLabel(
-  area: string | undefined,
+  area: string | string[] | undefined,
   checkin: string | undefined,
   checkout: string | undefined,
   guests: string | undefined,
 ): string {
   const parts: string[] = [];
-  if (area) parts.push(area);
+  const areaStr = Array.isArray(area) ? area.join("・") : area;
+  if (areaStr) parts.push(areaStr);
   const ci = formatDate(checkin);
   const co = formatDate(checkout);
   if (ci && co) parts.push(`${ci}〜${co}`);
@@ -73,7 +80,16 @@ export default async function SearchPage({
 }) {
   const { area, checkin, checkout, guests, tag } = await searchParams;
 
-  const [facilities, { data: allTags }] = await Promise.all([
+  const selectedAreas = area ? (Array.isArray(area) ? area : [area]) : [];
+
+  const currentParams: Record<string, string | string[]> = {};
+  if (area) currentParams.area = area;
+  if (checkin) currentParams.checkin = checkin;
+  if (checkout) currentParams.checkout = checkout;
+  if (guests) currentParams.guests = guests;
+  if (tag) currentParams.tag = tag;
+
+  const [facilities, { data: allTags }, { data: allAreas }] = await Promise.all([
     searchFacilities({
       area,
       checkin,
@@ -81,10 +97,12 @@ export default async function SearchPage({
       guests: guests ? Number(guests) : undefined,
       tag,
     }),
-    supabase.from("tags").select("id, name, slug").eq("category", "theme"),
+    supabase.from("tags").select("id, name, slug, icon_name").eq("category", "theme"),
+    supabase.from("areas").select("id, name, slug").order("sort_order"),
   ]);
 
   const tagList: Tag[] = allTags ?? [];
+  const areaList: AreaOption[] = allAreas ?? [];
   const conditionLabel = buildConditionLabel(area, checkin, checkout, guests);
 
   return (
@@ -114,28 +132,41 @@ export default async function SearchPage({
           {/* 左カラム：フィルター（PC幅のみ） */}
           <aside className="hidden lg:block w-[250px] shrink-0">
             <div className="bg-white rounded-xl border border-gray-200 p-5 sticky top-20">
-              <p className="text-sm font-semibold text-gray-900 mb-4">こだわり条件</p>
-              {tagList.length > 0 ? (
-                <ul className="space-y-2">
-                  {tagList.map((t) => (
-                    <li key={t.id}>
-                      <label className="flex items-center gap-2 cursor-pointer group">
-                        <input
-                          type="checkbox"
-                          defaultChecked={t.slug === tag}
-                          className="h-4 w-4 rounded border-gray-300 text-[#1B4332] focus:ring-[#1B4332]"
-                          disabled
-                        />
-                        <span className="text-sm text-gray-700 group-hover:text-gray-900 transition-colors">
-                          {t.name}
-                        </span>
-                      </label>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="text-xs text-gray-400">タグがありません</p>
+              {areaList.length > 0 && (
+                <AreaFilter
+                  areas={areaList}
+                  selectedAreas={selectedAreas}
+                  currentParams={currentParams}
+                />
               )}
+
+              <div>
+                <p className="text-sm font-semibold text-gray-900 mb-3">こだわり条件</p>
+                {tagList.length > 0 ? (
+                  <ul className="space-y-2">
+                    {tagList.map((t) => (
+                      <li key={t.id}>
+                        <label className="flex items-center gap-2 cursor-pointer group">
+                          <input
+                            type="checkbox"
+                            defaultChecked={t.slug === tag}
+                            className="h-4 w-4 rounded border-gray-300 text-[#1B4332] focus:ring-[#1B4332]"
+                            disabled
+                          />
+                          {t.icon_name && (
+                            <TagIcon iconName={t.icon_name} size={14} className="text-gray-400 shrink-0" />
+                          )}
+                          <span className="text-sm text-gray-700 group-hover:text-gray-900 transition-colors">
+                            {t.name}
+                          </span>
+                        </label>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-xs text-gray-400">タグがありません</p>
+                )}
+              </div>
             </div>
           </aside>
 
