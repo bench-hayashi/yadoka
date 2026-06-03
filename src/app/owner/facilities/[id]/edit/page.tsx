@@ -23,6 +23,8 @@ type FacilityRow = {
   checkin_time: string | null;
   checkout_time: string | null;
   min_nights: number | null;
+  license_type: string | null;
+  license_number: string | null;
   status: string;
 };
 
@@ -49,7 +51,7 @@ export default function EditFacilityPage() {
       const { data, error } = await supabase
         .from("facilities")
         .select(
-          "id, owner_id, name, area_id, address, description, max_guests, bedrooms, bathrooms, parking_spaces, checkin_time, checkout_time, min_nights, status"
+          "id, owner_id, name, area_id, address, description, max_guests, bedrooms, bathrooms, parking_spaces, checkin_time, checkout_time, min_nights, license_type, license_number, status"
         )
         .eq("id", id)
         .single();
@@ -84,6 +86,8 @@ export default function EditFacilityPage() {
         checkinTime:   facility.checkin_time ?? "15:00",
         checkoutTime:  facility.checkout_time ?? "10:00",
         minNights:     facility.min_nights != null ? String(facility.min_nights) : "1",
+        licenseType:   facility.license_type ?? "",
+        licenseNumber: facility.license_number ?? "",
       });
       setInitialTagIds(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any

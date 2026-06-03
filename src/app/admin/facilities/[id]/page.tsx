@@ -21,6 +21,8 @@ type FacilityDetail = {
   checkin_time: string | null;
   checkout_time: string | null;
   min_nights: number | null;
+  license_type: string | null;
+  license_number: string | null;
   created_at: string;
   updated_at: string;
   ownerName: string;
@@ -141,7 +143,7 @@ export default function AdminFacilityDetailPage() {
       ] = await Promise.all([
         supabase
           .from("facilities")
-          .select("id, name, status, is_published, description, address, max_guests, bedrooms, bathrooms, parking_spaces, checkin_time, checkout_time, min_nights, created_at, updated_at, profiles!owner_id(display_name, email), areas(name)")
+          .select("id, name, status, is_published, description, address, max_guests, bedrooms, bathrooms, parking_spaces, checkin_time, checkout_time, min_nights, license_type, license_number, created_at, updated_at, profiles!owner_id(display_name, email), areas(name)")
           .eq("id", id)
           .single(),
         supabase
@@ -186,6 +188,8 @@ export default function AdminFacilityDetailPage() {
         checkin_time:   f.checkin_time,
         checkout_time:  f.checkout_time,
         min_nights:     f.min_nights,
+        license_type:   f.license_type ?? null,
+        license_number: f.license_number ?? null,
         created_at:     f.created_at,
         updated_at:     f.updated_at,
         ownerName:      f.profiles?.display_name ?? "—",
@@ -378,6 +382,31 @@ export default function AdminFacilityDetailPage() {
                 </div>
               ))}
             </dl>
+          </div>
+
+          {/* 営業許可情報 */}
+          <div>
+            <p className="text-xs font-medium text-gray-500 mb-2">営業許可情報</p>
+            {!facility.license_type && !facility.license_number ? (
+              <p className="text-sm font-semibold text-red-600">
+                ⚠ 未登録 — 許可種別・許可番号が登録されていません
+              </p>
+            ) : (
+              <dl className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                <div className="rounded-lg border border-gray-100 bg-gray-50 px-3 py-2">
+                  <p className="text-xs text-gray-400">許可種別</p>
+                  <p className={`text-sm font-medium mt-0.5 ${facility.license_type ? "text-gray-800" : "text-red-600"}`}>
+                    {facility.license_type ?? "未登録"}
+                  </p>
+                </div>
+                <div className="rounded-lg border border-gray-100 bg-gray-50 px-3 py-2">
+                  <p className="text-xs text-gray-400">許可番号</p>
+                  <p className={`text-sm font-medium mt-0.5 ${facility.license_number ? "text-gray-800" : "text-red-600"}`}>
+                    {facility.license_number ?? "未登録"}
+                  </p>
+                </div>
+              </dl>
+            )}
           </div>
 
           {/* タグ */}

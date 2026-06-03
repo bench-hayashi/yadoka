@@ -50,7 +50,7 @@
 `id`, `name`, `slug`, `category`, `sort_order`, `created_at`
 
 ### facilities
-`id`, `owner_id`, `name`, `slug`, `description`, `area_id`, `address`, `latitude`, `longitude`, `max_guests`, `bedrooms`, `bathrooms`, `parking_spaces`, `checkin_time`, `checkout_time`, `min_nights`, `status`, `is_published`, `published_at`, `created_at`, `updated_at`
+`id`, `owner_id`, `name`, `slug`, `description`, `area_id`, `address`, `latitude`, `longitude`, `max_guests`, `bedrooms`, `bathrooms`, `parking_spaces`, `checkin_time`, `checkout_time`, `min_nights`, `license_type`, `license_number`, `status`, `is_published`, `published_at`, `created_at`, `updated_at`
 
 ### facility_images
 `id`, `facility_id`, `url`, `alt_text`, `sort_order`, `is_hero`, `created_at`

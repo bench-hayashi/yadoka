@@ -330,6 +330,21 @@ export default async function FacilityPage({ params }: Props) {
                   )}
                 </dl>
 
+                {/* 営業許可情報 */}
+                {(facility.license_type || facility.license_number) && (
+                  <div className="border-t border-gray-100 pt-4">
+                    <p className="text-xs font-semibold text-gray-500 mb-1.5">営業許可情報</p>
+                    <div className="space-y-0.5">
+                      {facility.license_type && (
+                        <p className="text-xs text-gray-400">許可種別：{facility.license_type}</p>
+                      )}
+                      {facility.license_number && (
+                        <p className="text-xs text-gray-400">許可番号：{facility.license_number}</p>
+                      )}
+                    </div>
+                  </div>
+                )}
+
               </div>
             </div>
             <PriceSimulator facilityId={Number(facility.id)} facilitySlug={slug} />

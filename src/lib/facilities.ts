@@ -75,6 +75,8 @@ export type FacilityDetail = Omit<Facility, "pricing_rules"> & {
   checkin_time: string | null;
   checkout_time: string | null;
   min_nights: number | null;
+  license_type: string | null;
+  license_number: string | null;
 };
 
 export type SearchParams = {
@@ -145,6 +147,7 @@ export async function getFacilityBySlug(slug: string): Promise<FacilityDetail | 
       address, latitude, longitude,
       bedrooms, bathrooms, parking_spaces,
       checkin_time, checkout_time, min_nights,
+      license_type, license_number,
       areas(id, name, slug, prefecture),
       facility_images(id, url, alt_text, is_hero, sort_order),
       facility_tags(tags(id, name, slug, category, icon_name)),

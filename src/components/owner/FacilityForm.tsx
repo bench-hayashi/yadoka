@@ -20,6 +20,8 @@ export type FormData = {
   checkinTime: string;
   checkoutTime: string;
   minNights: string;
+  licenseType: string;
+  licenseNumber: string;
 };
 
 const DEFAULT_FORM: FormData = {
@@ -34,7 +36,17 @@ const DEFAULT_FORM: FormData = {
   checkinTime: "15:00",
   checkoutTime: "10:00",
   minNights: "1",
+  licenseType: "",
+  licenseNumber: "",
 };
+
+const LICENSE_TYPE_OPTIONS = [
+  { value: "", label: "選択してください" },
+  { value: "住宅宿泊事業（民泊）", label: "住宅宿泊事業（民泊）" },
+  { value: "簡易宿所営業（旅館業法）", label: "簡易宿所営業（旅館業法）" },
+  { value: "旅館・ホテル営業（旅館業法）", label: "旅館・ホテル営業（旅館業法）" },
+  { value: "国家戦略特区民泊", label: "国家戦略特区民泊" },
+];
 
 const CATEGORY_LABEL: Record<string, string> = {
   facility: "設備",
@@ -158,6 +170,8 @@ export default function FacilityForm({
       if (!form.name.trim()) errs.name = "施設名を入力してください";
       if (!form.address.trim()) errs.address = "住所を入力してください";
       if (!form.description.trim()) errs.description = "説明文を入力してください";
+      if (!form.licenseType) errs.licenseType = "許可種別を選択してください";
+      if (!form.licenseNumber.trim()) errs.licenseNumber = "許可番号・届出番号を入力してください";
     }
     if (s === 1) {
       const n = Number(form.maxGuests);
@@ -183,6 +197,8 @@ export default function FacilityForm({
       checkin_time:   form.checkinTime  || null,
       checkout_time:  form.checkoutTime || null,
       min_nights:     form.minNights     ? Number(form.minNights)     : 1,
+      license_type:   form.licenseType.trim()  || null,
+      license_number: form.licenseNumber.trim() || null,
       status,
     };
 
@@ -384,6 +400,41 @@ export default function FacilityForm({
                 {errors.description && (
                   <p className="mt-1 text-xs text-red-600">{errors.description}</p>
                 )}
+              </div>
+
+              {/* 許可・届出情報 */}
+              <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 space-y-3">
+                <p className="text-xs font-semibold text-gray-600">許可・届出情報</p>
+                <div>
+                  <label htmlFor="licenseType" className="block text-sm font-medium text-gray-700 mb-1">
+                    許可種別 <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    id="licenseType"
+                    value={form.licenseType}
+                    onChange={(e) => setField("licenseType", e.target.value)}
+                    className={inputCls("licenseType")}
+                  >
+                    {LICENSE_TYPE_OPTIONS.map((opt) => (
+                      <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    ))}
+                  </select>
+                  {errors.licenseType && <p className="mt-1 text-xs text-red-600">{errors.licenseType}</p>}
+                </div>
+                <div>
+                  <label htmlFor="licenseNumber" className="block text-sm font-medium text-gray-700 mb-1">
+                    許可番号・届出番号 <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    id="licenseNumber"
+                    type="text"
+                    value={form.licenseNumber}
+                    onChange={(e) => setField("licenseNumber", e.target.value)}
+                    placeholder="例：〇〇県△△第1234号"
+                    className={inputCls("licenseNumber")}
+                  />
+                  {errors.licenseNumber && <p className="mt-1 text-xs text-red-600">{errors.licenseNumber}</p>}
+                </div>
               </div>
             </div>
           </>
