@@ -30,7 +30,7 @@ export default function FavoritesContent() {
           areas(id, name, slug, prefecture),
           facility_images(id, url, is_hero),
           facility_tags(tags(id, name, slug)),
-          pricing_rules(id, price_per_night)
+          pricing_rules(id, minimum_price)
         )
       `)
       .eq("user_id", user.id)

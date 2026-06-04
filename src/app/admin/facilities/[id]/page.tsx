@@ -45,9 +45,9 @@ type TagRow = {
 };
 
 type PricingRule = {
-  season: string;
-  day_type: string;
-  price_per_night: number | null;
+  season:        string;
+  day_type:      string;
+  minimum_price: number | null;
 };
 
 type SeasonRow = {
@@ -157,7 +157,7 @@ export default function AdminFacilityDetailPage() {
           .eq("facility_id", id),
         supabase
           .from("pricing_rules")
-          .select("season, day_type, price_per_night")
+          .select("season, day_type, minimum_price")
           .eq("facility_id", id),
         supabase
           .from("seasons")
@@ -214,7 +214,7 @@ export default function AdminFacilityDetailPage() {
 
   const pricingMap: Record<string, number | null> = {};
   for (const rule of pricing) {
-    pricingMap[`${rule.season}_${rule.day_type}`] = rule.price_per_night ?? null;
+    pricingMap[`${rule.season}_${rule.day_type}`] = rule.minimum_price ?? null;
   }
 
   // ── タグカテゴリ別 ─────────────────────────────────────────────────────────

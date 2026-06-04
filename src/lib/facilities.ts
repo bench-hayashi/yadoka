@@ -2,12 +2,16 @@ import { supabase } from "@/lib/supabase";
 
 export type PricingRule = {
   id: string;
-  price_per_night: number;
+  minimum_price: number;
 };
 
 export type PricingRuleDetail = PricingRule & {
-  season: string;
-  day_type: string;
+  season:       string;
+  day_type:     string;
+  adult_fee:    number;
+  child_fee:    number;
+  infant_fee:   number;
+  pet_fee:      number;
 };
 
 export type FacilityTag = {
@@ -116,7 +120,7 @@ export async function searchFacilities(params: SearchParams): Promise<Facility[]
       ${areaSelect},
       facility_images(url, is_hero),
       ${tagSelect},
-      pricing_rules(price_per_night)`
+      pricing_rules(minimum_price)`
     )
     .eq("is_published", true)
     .limit(20);
@@ -158,7 +162,7 @@ export async function getFacilityBySlug(slug: string): Promise<FacilityDetail | 
       areas(id, name, slug, prefecture),
       facility_images(id, url, alt_text, is_hero, sort_order),
       facility_tags(tags(id, name, slug, category, icon_name)),
-      pricing_rules(id, season, day_type, price_per_night),
+      pricing_rules(id, season, day_type, minimum_price, adult_fee, child_fee, infant_fee, pet_fee),
       seasons(id, name, start_date, end_date),
       simple_seasons(id, month, season)`
     )
@@ -200,5 +204,5 @@ export async function getAvailability(
 
 export function getLowestPrice(pricingRules: PricingRule[]): number | null {
   if (pricingRules.length === 0) return null;
-  return Math.min(...pricingRules.map((r) => r.price_per_night));
+  return Math.min(...pricingRules.map((r) => r.minimum_price));
 }

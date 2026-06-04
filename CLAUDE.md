@@ -61,11 +61,14 @@
 ### seasons
 `id`, `facility_id`, `name`, `start_date`, `end_date`, `created_at`
 
+### simple_seasons
+`id`, `facility_id`, `month`(1〜12), `season`('low'|'mid'|'high'), `created_at`
+
 ### pricing_rules
-`id`, `facility_id`, `season`, `day_type`, `price_per_night`, `created_at`
+`id`, `facility_id`, `season`, `day_type`, `minimum_price`, `adult_fee`, `child_fee`, `infant_fee`, `pet_fee`, `created_at`
 
 ### pricing_overrides
-`id`, `facility_id`, `target_date`, `price_per_night`, `reason`, `created_at`
+`id`, `facility_id`, `target_date`, `override_amount`, `override_type`('flat'|'minimum'), `reason`, `created_at`
 
 ### availability
 `id`, `facility_id`, `target_date`, `is_available`, `source`, `created_at`
@@ -77,4 +80,51 @@
 `id`, `facility_id`, `user_id`, `guest_name`, `guest_email`, `guest_phone`, `guest_count`, `checkin_date`, `checkout_date`, `message`, `status`, `created_at`, `updated_at`
 
 ### reservation_requests
-`id`, `facility_id`, `user_id`, `guest_name`, `guest_email`, `guest_phone`, `guest_count`, `checkin_date`, `checkout_date`, `total_price`, `message`, `status`, `owner_reply`, `created_at`, `updated_at`
+`id`, `facility_id`, `user_id`, `guest_name`, `guest_email`, `guest_phone`, `guest_count`, `adults_count`, `children_count`, `infants_count`, `pets_count`, `checkin_date`, `checkout_date`, `total_price`, `message`, `status`, `owner_reply`, `created_at`, `updated_at`
+
+## 料金計算モデル
+
+### シーズン判定（優先順位）
+1. **詳細シーズン**（`seasons` テーブル）：日付範囲で指定した期間が最優先
+2. **簡易シーズン**（`simple_seasons` テーブル）：月単位で毎年繰り返し適用
+3. **デフォルト**：上記どちらにも該当しない場合は `low`（ローシーズン）
+
+曜日判定：土曜泊 = `weekend`、それ以外 = `weekday`
+
+### 1泊料金の計算手順
+
+```
+人数料金 = adults × adult_fee + children × child_fee + infants × infant_fee
+ペット料金 = pets × pet_fee  （常にシーズンルールから取得）
+
+＜その日に pricing_overrides がある場合＞
+  override_type = 'flat'    → 1泊小計 = override_amount
+  override_type = 'minimum' → 1泊小計 = max(override_amount, 人数料金)
+
+＜上書きがない場合＞
+  1泊小計 = max(minimum_price, 人数料金)
+
+1泊合計 = 1泊小計 + ペット料金
+```
+
+総額 = 全宿泊日の 1泊合計 を合算
+
+### 料金API
+`GET /api/pricing?facilityId=&checkin=&checkout=&adults=&children=&infants=&pets=`
+
+レスポンス:
+```json
+{
+  "pricing": {
+    "totalPrice": number,
+    "nights": number,
+    "guestBreakdown": { "adults": number, "children": number, "infants": number, "pets": number },
+    "breakdown": [{
+      "date": string, "dayType": string, "season": string,
+      "isOverride": boolean, "overrideType": "flat"|"minimum"|null,
+      "minimumPrice": number, "guestCharge": number, "petCharge": number, "nightTotal": number
+    }]
+  },
+  "availability": { "isAvailable": boolean, "unavailableDates": string[] }
+}
+```

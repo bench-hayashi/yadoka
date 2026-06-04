@@ -1,43 +1,58 @@
 import { supabase } from "@/lib/supabase";
 
-type DayType = "weekday" | "weekend";
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+type DayType    = "weekday" | "weekend";
 type SeasonType = "low" | "mid" | "high";
+type OverrideType = "flat" | "minimum";
 
 type PricingRule = {
-  season: SeasonType;
-  day_type: DayType;
-  price_per_night: number;
+  season:        SeasonType;
+  day_type:      DayType;
+  minimum_price: number;
+  adult_fee:     number;
+  child_fee:     number;
+  infant_fee:    number;
+  pet_fee:       number;
 };
 
 type Season = {
   start_date: string;
-  end_date: string;
-  name: string;
+  end_date:   string;
+  name:       string;
 };
 
 type SimpleSeason = {
-  month: number;
+  month:  number;
   season: SeasonType;
 };
 
 type PricingOverride = {
-  target_date: string;
-  price_per_night: number;
+  target_date:     string;
+  override_amount: number;
+  override_type:   OverrideType;
 };
 
 export type PriceBreakdown = {
-  date: string;
-  dayType: DayType;
-  season: SeasonType;
-  price: number;
-  isOverride: boolean;
+  date:          string;
+  dayType:       DayType;
+  season:        SeasonType;
+  isOverride:    boolean;
+  overrideType:  OverrideType | null;
+  minimumPrice:  number;
+  guestCharge:   number;
+  petCharge:     number;
+  nightTotal:    number;
 };
 
 export type PriceResult = {
-  totalPrice: number;
-  nights: number;
-  breakdown: PriceBreakdown[];
+  totalPrice:     number;
+  nights:         number;
+  guestBreakdown: { adults: number; children: number; infants: number; pets: number };
+  breakdown:      PriceBreakdown[];
 };
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function addDays(dateStr: string, days: number): string {
   const d = new Date(dateStr);
@@ -89,25 +104,39 @@ export function getSeason(
   return "low";
 }
 
-export async function calculateTotalPrice(
-  facilityId: number,
-  checkinDate: string,
-  checkoutDate: string,
-): Promise<PriceResult | null> {
+// ─── calculateTotalPrice ──────────────────────────────────────────────────────
+
+export async function calculateTotalPrice({
+  facilityId,
+  checkinDate,
+  checkoutDate,
+  adults   = 2,
+  children = 0,
+  infants  = 0,
+  pets     = 0,
+}: {
+  facilityId:    number;
+  checkinDate:   string;
+  checkoutDate:  string;
+  adults?:   number;
+  children?: number;
+  infants?:  number;
+  pets?:     number;
+}): Promise<PriceResult | null> {
   const nights = eachNight(checkinDate, checkoutDate);
   if (nights.length === 0) return null;
 
   const id = Number(facilityId);
 
   const [
-    { data: rulesData, error: rulesError },
-    { data: seasonsData, error: seasonsError },
+    { data: rulesData,         error: rulesError         },
+    { data: seasonsData,       error: seasonsError       },
     { data: simpleSeasonsData, error: simpleSeasonsError },
-    { data: overridesData, error: overridesError },
+    { data: overridesData,     error: overridesError     },
   ] = await Promise.all([
     supabase
       .from("pricing_rules")
-      .select("season, day_type, price_per_night")
+      .select("season, day_type, minimum_price, adult_fee, child_fee, infant_fee, pet_fee")
       .eq("facility_id", id),
     supabase
       .from("seasons")
@@ -119,76 +148,107 @@ export async function calculateTotalPrice(
       .eq("facility_id", id),
     supabase
       .from("pricing_overrides")
-      .select("target_date, price_per_night")
+      .select("target_date, override_amount, override_type")
       .eq("facility_id", id)
       .gte("target_date", checkinDate)
       .lte("target_date", addDays(checkoutDate, -1)),
   ]);
 
-  if (rulesError) console.error("pricing_rules fetch error:", rulesError);
-  if (seasonsError) console.error("seasons fetch error:", seasonsError);
-  if (simpleSeasonsError) console.error("simple_seasons fetch error:", simpleSeasonsError);
-  if (overridesError) console.error("pricing_overrides fetch error:", overridesError);
+  if (rulesError)         console.error("pricing_rules fetch error:",   rulesError);
+  if (seasonsError)       console.error("seasons fetch error:",         seasonsError);
+  if (simpleSeasonsError) console.error("simple_seasons fetch error:",  simpleSeasonsError);
+  if (overridesError)     console.error("pricing_overrides fetch error:", overridesError);
 
-  const rules: PricingRule[] = (rulesData ?? []) as PricingRule[];
-  const seasons: Season[] = (seasonsData ?? []) as Season[];
-  const simpleSeasons: SimpleSeason[] = (simpleSeasonsData ?? []) as SimpleSeason[];
-
-  // [DEBUG] 取得データを確認
-  console.log(`[pricing] facilityId=${facilityId} (type: ${typeof facilityId}) → Number変換後: id=${id} (type: ${typeof id})`);
-  console.log(`[pricing] pricing_rules: ${rules.length}件`, rules);
-  console.log(`[pricing] seasons: ${seasons.length}件`, seasons);
-  console.log(`[pricing] simple_seasons: ${simpleSeasons.length}件`, simpleSeasons);
+  const rules:         PricingRule[]    = (rulesData         ?? []) as PricingRule[];
+  const detailedSeasons: Season[]       = (seasonsData       ?? []) as Season[];
+  const simpleSeasons: SimpleSeason[]   = (simpleSeasonsData ?? []) as SimpleSeason[];
 
   // ルックアップマップ構築
-  const ruleMap = new Map<string, number>();
+  const ruleMap = new Map<string, PricingRule>();
   for (const r of rules) {
-    ruleMap.set(`${r.season}:${r.day_type}`, r.price_per_night);
+    ruleMap.set(`${r.season}:${r.day_type}`, r);
   }
-  console.log("[pricing] ruleMap keys:", [...ruleMap.keys()]);
 
-  const overrideMap = new Map<string, number>();
+  const overrideMap = new Map<string, PricingOverride>();
   for (const o of (overridesData ?? []) as PricingOverride[]) {
-    overrideMap.set(o.target_date, o.price_per_night);
+    overrideMap.set(o.target_date, o);
   }
 
   const breakdown: PriceBreakdown[] = [];
 
   for (const date of nights) {
-    const isOverride = overrideMap.has(date);
+    const dayType = getDayType(date);
+    const season  = getSeason(id, date, detailedSeasons, simpleSeasons);
+    const rule    = ruleMap.get(`${season}:${dayType}`);
 
-    if (isOverride) {
-      const dayType = getDayType(date);
-      const season = getSeason(id, date, seasons, simpleSeasons);
+    // pet_fee は常にシーズン×曜日のルールから取得（上書き日も同様）
+    const petFee    = rule?.pet_fee ?? 0;
+    const petCharge = pets * petFee;
+
+    const override = overrideMap.get(date);
+
+    if (override) {
+      const guestCharge =
+        adults   * (rule?.adult_fee  ?? 0) +
+        children * (rule?.child_fee  ?? 0) +
+        infants  * (rule?.infant_fee ?? 0);
+
+      const subtotal =
+        override.override_type === "flat"
+          ? override.override_amount
+          : Math.max(override.override_amount, guestCharge);
+
       breakdown.push({
         date,
         dayType,
         season,
-        price: overrideMap.get(date)!,
-        isOverride: true,
+        isOverride:   true,
+        overrideType: override.override_type,
+        minimumPrice: rule?.minimum_price ?? 0,
+        guestCharge,
+        petCharge,
+        nightTotal: subtotal + petCharge,
       });
       continue;
     }
 
-    const dayType = getDayType(date);
-    const season = getSeason(id, date, seasons, simpleSeasons);
-
-    // [DEBUG] 各宿泊日の判定結果を確認
-    console.log(`[pricing] ${date}: dayType=${dayType}, season=${season}, lookupKey=${season}:${dayType}`);
-
-    const price = ruleMap.get(`${season}:${dayType}`);
-    if (price === undefined) {
+    // 通常計算
+    if (!rule) {
       console.warn(`[pricing] 料金ルール未定義のため null を返します: key="${season}:${dayType}"`);
       return null;
     }
 
-    breakdown.push({ date, dayType, season, price, isOverride: false });
+    const guestCharge =
+      adults   * rule.adult_fee +
+      children * rule.child_fee +
+      infants  * rule.infant_fee;
+
+    const subtotal = Math.max(rule.minimum_price, guestCharge);
+
+    breakdown.push({
+      date,
+      dayType,
+      season,
+      isOverride:   false,
+      overrideType: null,
+      minimumPrice: rule.minimum_price,
+      guestCharge,
+      petCharge,
+      nightTotal: subtotal + petCharge,
+    });
   }
 
-  const totalPrice = breakdown.reduce((sum, b) => sum + b.price, 0);
+  const totalPrice = breakdown.reduce((sum, b) => sum + b.nightTotal, 0);
 
-  return { totalPrice, nights: nights.length, breakdown };
+  return {
+    totalPrice,
+    nights:         nights.length,
+    guestBreakdown: { adults, children, infants, pets },
+    breakdown,
+  };
 }
+
+// ─── checkAvailability ────────────────────────────────────────────────────────
 
 export async function checkAvailability(
   facilityId: number,

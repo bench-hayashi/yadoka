@@ -6,8 +6,8 @@ export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
 
   const facilityIdStr = searchParams.get("facilityId");
-  const checkin = searchParams.get("checkin");
-  const checkout = searchParams.get("checkout");
+  const checkin       = searchParams.get("checkin");
+  const checkout      = searchParams.get("checkout");
 
   if (!facilityIdStr || !checkin || !checkout) {
     return NextResponse.json(
@@ -31,8 +31,13 @@ export async function GET(request: NextRequest) {
     );
   }
 
+  const adults   = Math.max(0, Number(searchParams.get("adults")   ?? "2"));
+  const children = Math.max(0, Number(searchParams.get("children") ?? "0"));
+  const infants  = Math.max(0, Number(searchParams.get("infants")  ?? "0"));
+  const pets     = Math.max(0, Number(searchParams.get("pets")     ?? "0"));
+
   const [pricing, availability] = await Promise.all([
-    calculateTotalPrice(facilityId, checkin, checkout),
+    calculateTotalPrice({ facilityId, checkinDate: checkin, checkoutDate: checkout, adults, children, infants, pets }),
     checkAvailability(facilityId, checkin, checkout),
   ]);
 
