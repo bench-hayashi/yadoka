@@ -41,6 +41,12 @@ export type Season = {
   end_date: string;
 };
 
+export type SimpleSeason = {
+  id: string;
+  month: number;
+  season: string;
+};
+
 export type Availability = {
   id: string;
   facility_id: number;
@@ -66,6 +72,7 @@ export type Facility = {
 export type FacilityDetail = Omit<Facility, "pricing_rules"> & {
   pricing_rules: PricingRuleDetail[];
   seasons: Season[];
+  simple_seasons: SimpleSeason[];
   address: string | null;
   latitude: number | null;
   longitude: number | null;
@@ -152,7 +159,8 @@ export async function getFacilityBySlug(slug: string): Promise<FacilityDetail | 
       facility_images(id, url, alt_text, is_hero, sort_order),
       facility_tags(tags(id, name, slug, category, icon_name)),
       pricing_rules(id, season, day_type, price_per_night),
-      seasons(id, name, start_date, end_date)`
+      seasons(id, name, start_date, end_date),
+      simple_seasons(id, month, season)`
     )
     .eq("slug", slug)
     .eq("is_published", true)

@@ -5,8 +5,9 @@ import { supabase } from "@/lib/supabase";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type SeasonKey = "low" | "mid" | "high";
+type SeasonKey  = "low" | "mid" | "high";
 type DayTypeKey = "weekday" | "weekend";
+type SeasonTab  = "simple" | "detailed";
 
 const SEASONS: { value: SeasonKey; label: string }[] = [
   { value: "low",  label: "ローシーズン"   },
@@ -19,8 +20,19 @@ const DAY_TYPES: { value: DayTypeKey; label: string }[] = [
   { value: "weekend", label: "休日（円）" },
 ];
 
-type RuleCell   = { id: string | null; raw: string };
-type RulesGrid  = Record<string, RuleCell>; // key: `${season}_${dayType}`
+const MONTH_LABELS = [
+  "1月", "2月", "3月", "4月", "5月", "6月",
+  "7月", "8月", "9月", "10月", "11月", "12月",
+];
+
+// 四季プリセット（1月〜12月）
+const SHIKI_PRESET: SeasonKey[] = [
+  "low", "low", "mid", "mid", "mid", "high",
+  "high", "high", "mid", "mid", "mid", "low",
+];
+
+type RuleCell  = { id: string | null; raw: string };
+type RulesGrid = Record<string, RuleCell>; // key: `${season}_${dayType}`
 
 type SeasonRow = {
   uid:        string;
@@ -30,12 +42,17 @@ type SeasonRow = {
   end_date:   string;
 };
 
+type SimpleSeasonRow = {
+  month:  number; // 1-12
+  season: SeasonKey;
+};
+
 type OverrideRow = {
-  uid:            string;
-  id:             string | null;
-  target_date:    string;
-  price_per_night: string; // raw digits
-  reason:         string;
+  uid:             string;
+  id:              string | null;
+  target_date:     string;
+  price_per_night: string;
+  reason:          string;
 };
 
 type Props = { facilityId: string };
@@ -67,21 +84,28 @@ function initGrid(): RulesGrid {
   return g;
 }
 
+function initSimpleSeasons(): SimpleSeasonRow[] {
+  return Array.from({ length: 12 }, (_, i) => ({ month: i + 1, season: "low" as SeasonKey }));
+}
+
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function PricingManager({ facilityId }: Props) {
-  const [grid,     setGrid]     = useState<RulesGrid>(initGrid);
-  const [seasons,  setSeasons]  = useState<SeasonRow[]>([]);
-  const [overrides,setOverrides]= useState<OverrideRow[]>([]);
+  const [grid,          setGrid]          = useState<RulesGrid>(initGrid);
+  const [seasons,       setSeasons]       = useState<SeasonRow[]>([]);
+  const [simpleSeasons, setSimpleSeasons] = useState<SimpleSeasonRow[]>(initSimpleSeasons);
+  const [overrides,     setOverrides]     = useState<OverrideRow[]>([]);
+  const [seasonTab,     setSeasonTab]     = useState<SeasonTab>("simple");
 
-  const [savingGrid,      setSavingGrid]      = useState(false);
-  const [savingSeasons,   setSavingSeasons]   = useState(false);
-  const [savingOverrides, setSavingOverrides] = useState(false);
+  const [savingGrid,          setSavingGrid]          = useState(false);
+  const [savingSeasons,       setSavingSeasons]       = useState(false);
+  const [savingSimpleSeasons, setSavingSimpleSeasons] = useState(false);
+  const [savingOverrides,     setSavingOverrides]     = useState(false);
 
   const [toast, setToast] = useState<string | null>(null);
 
-  function showToast() {
-    setToast("料金設定を保存しました");
+  function showToast(msg = "料金設定を保存しました") {
+    setToast(msg);
     setTimeout(() => setToast(null), 3000);
   }
 
@@ -90,6 +114,7 @@ export default function PricingManager({ facilityId }: Props) {
   useEffect(() => {
     fetchGrid();
     fetchSeasons();
+    fetchSimpleSeasons();
     fetchOverrides();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [facilityId]);
@@ -126,6 +151,20 @@ export default function PricingManager({ facilityId }: Props) {
         start_date: r.start_date ?? "",
         end_date:   r.end_date   ?? "",
       }))
+    );
+  }
+
+  async function fetchSimpleSeasons() {
+    const { data } = await supabase
+      .from("simple_seasons")
+      .select("month, season")
+      .eq("facility_id", facilityId);
+    if (!data || data.length === 0) return;
+    setSimpleSeasons(prev =>
+      prev.map(row => {
+        const found = data.find(r => r.month === row.month);
+        return found ? { ...row, season: found.season as SeasonKey } : row;
+      })
     );
   }
 
@@ -195,6 +234,22 @@ export default function PricingManager({ facilityId }: Props) {
     }
   }
 
+  async function saveSimpleSeasons() {
+    setSavingSimpleSeasons(true);
+    try {
+      await supabase.from("simple_seasons").delete().eq("facility_id", facilityId);
+      const rows = simpleSeasons.map(s => ({
+        facility_id: facilityId,
+        month:       s.month,
+        season:      s.season,
+      }));
+      await supabase.from("simple_seasons").insert(rows);
+      showToast();
+    } finally {
+      setSavingSimpleSeasons(false);
+    }
+  }
+
   async function saveOverrides() {
     setSavingOverrides(true);
     try {
@@ -219,6 +274,20 @@ export default function PricingManager({ facilityId }: Props) {
 
   function setGridCell(key: string, input: string) {
     setGrid(prev => ({ ...prev, [key]: { ...prev[key], raw: toRaw(input) } }));
+  }
+
+  // ── Simple season handlers ─────────────────────────────────────────────────
+
+  function setSimpleSeason(month: number, season: SeasonKey) {
+    setSimpleSeasons(prev =>
+      prev.map(r => r.month === month ? { ...r, season } : r)
+    );
+  }
+
+  function applyShikiPreset() {
+    setSimpleSeasons(
+      Array.from({ length: 12 }, (_, i) => ({ month: i + 1, season: SHIKI_PRESET[i] }))
+    );
   }
 
   // ── Season handlers ────────────────────────────────────────────────────────
@@ -335,71 +404,165 @@ export default function PricingManager({ facilityId }: Props) {
         </div>
       </section>
 
-      {/* ── Section 2: Season Periods ─────────────────────────────────────── */}
+      {/* ── Section 2: Season Definition (tabbed) ────────────────────────── */}
       <section className="rounded-xl border border-gray-200 bg-white p-6 space-y-5">
-        <h2 className="text-base font-semibold text-gray-900">シーズン期間の定義</h2>
+        <h2 className="text-base font-semibold text-gray-900">シーズン設定</h2>
 
-        <div className="space-y-2">
-          {seasons.length === 0 && (
-            <p className="text-sm text-gray-400">シーズン期間がまだ設定されていません。</p>
-          )}
-          {seasons.map(s => (
-            <div key={s.uid} className="flex flex-wrap items-center gap-2">
-              <select
-                value={s.name}
-                onChange={e => setSeason(s.uid, "name", e.target.value as SeasonKey)}
-                className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#1B4332] focus:outline-none focus:ring-1 focus:ring-[#1B4332]"
-              >
-                {SEASONS.map(opt => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
-                ))}
-              </select>
+        {/* Tab header */}
+        <div className="flex gap-1 rounded-lg border border-gray-200 bg-gray-50 p-1 w-fit">
+          <button
+            type="button"
+            onClick={() => setSeasonTab("simple")}
+            className={`rounded-md px-4 py-1.5 text-sm font-medium transition-colors ${
+              seasonTab === "simple"
+                ? "bg-white text-gray-900 shadow-sm"
+                : "text-gray-500 hover:text-gray-700"
+            }`}
+          >
+            簡易設定
+          </button>
+          <button
+            type="button"
+            onClick={() => setSeasonTab("detailed")}
+            className={`rounded-md px-4 py-1.5 text-sm font-medium transition-colors ${
+              seasonTab === "detailed"
+                ? "bg-white text-gray-900 shadow-sm"
+                : "text-gray-500 hover:text-gray-700"
+            }`}
+          >
+            詳細設定
+          </button>
+        </div>
 
-              <input
-                type="date"
-                value={s.start_date}
-                onChange={e => setSeason(s.uid, "start_date", e.target.value)}
-                className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#1B4332] focus:outline-none focus:ring-1 focus:ring-[#1B4332]"
-              />
-              <span className="text-sm text-gray-400">〜</span>
-              <input
-                type="date"
-                value={s.end_date}
-                onChange={e => setSeason(s.uid, "end_date", e.target.value)}
-                className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#1B4332] focus:outline-none focus:ring-1 focus:ring-[#1B4332]"
-              />
+        {/* ── Simple tab ─────────────────────────────────────────────────── */}
+        {seasonTab === "simple" && (
+          <div className="space-y-4">
+            <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+              詳細設定で指定した期間がある場合は、その日は詳細設定が優先されます。
+            </p>
 
+            {/* Preset button */}
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-gray-500">プリセット：</span>
               <button
                 type="button"
-                onClick={() => removeSeason(s.uid)}
-                className="rounded-lg border border-red-200 px-3 py-2 text-sm text-red-500 hover:bg-red-50 transition-colors"
+                onClick={applyShikiPreset}
+                className="rounded-md border border-gray-300 px-3 py-1 text-xs text-gray-600 hover:border-[#2D6A4F] hover:text-[#1B4332] transition-colors"
               >
-                削除
+                四季で設定
+              </button>
+              <span className="text-xs text-gray-400">
+                （冬=ロー・春秋=ミドル・夏=ハイ）
+              </span>
+            </div>
+
+            {/* Month grid */}
+            <div className="grid grid-cols-2 gap-x-8 gap-y-2">
+              {simpleSeasons.map(row => (
+                <div key={row.month} className="flex items-center gap-3">
+                  <span className="w-8 text-sm text-gray-700 tabular-nums shrink-0">
+                    {MONTH_LABELS[row.month - 1]}
+                  </span>
+                  <select
+                    value={row.season}
+                    onChange={e => setSimpleSeason(row.month, e.target.value as SeasonKey)}
+                    className="flex-1 rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-[#1B4332] focus:outline-none focus:ring-1 focus:ring-[#1B4332]"
+                  >
+                    {SEASONS.map(opt => (
+                      <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    ))}
+                  </select>
+                </div>
+              ))}
+            </div>
+
+            <p className="text-xs text-gray-500">
+              月単位で毎年繰り返し適用されます。特定の期間だけ変えたい場合は詳細設定を使用してください。
+            </p>
+
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={saveSimpleSeasons}
+                disabled={savingSimpleSeasons}
+                className="rounded-lg bg-[#1B4332] px-5 py-2 text-sm font-semibold text-white hover:bg-[#2D6A4F] transition-colors disabled:opacity-50"
+              >
+                {savingSimpleSeasons ? "保存中..." : "保存"}
               </button>
             </div>
-          ))}
-        </div>
+          </div>
+        )}
 
-        <div className="flex items-center justify-between">
-          <button
-            type="button"
-            onClick={addSeason}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-dashed border-gray-300 px-4 py-2 text-sm text-gray-600 hover:border-[#2D6A4F] hover:text-[#1B4332] transition-colors"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-            </svg>
-            期間を追加
-          </button>
-          <button
-            type="button"
-            onClick={saveSeasons}
-            disabled={savingSeasons}
-            className="rounded-lg bg-[#1B4332] px-5 py-2 text-sm font-semibold text-white hover:bg-[#2D6A4F] transition-colors disabled:opacity-50"
-          >
-            {savingSeasons ? "保存中..." : "保存"}
-          </button>
-        </div>
+        {/* ── Detailed tab ───────────────────────────────────────────────── */}
+        {seasonTab === "detailed" && (
+          <div className="space-y-4">
+            <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+              カレンダーで指定した期間が、簡易設定より優先されます。詳細設定された日は詳細が優先されます。
+            </p>
+
+            <div className="space-y-2">
+              {seasons.length === 0 && (
+                <p className="text-sm text-gray-400">シーズン期間がまだ設定されていません。</p>
+              )}
+              {seasons.map(s => (
+                <div key={s.uid} className="flex flex-wrap items-center gap-2">
+                  <select
+                    value={s.name}
+                    onChange={e => setSeason(s.uid, "name", e.target.value as SeasonKey)}
+                    className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#1B4332] focus:outline-none focus:ring-1 focus:ring-[#1B4332]"
+                  >
+                    {SEASONS.map(opt => (
+                      <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    ))}
+                  </select>
+
+                  <input
+                    type="date"
+                    value={s.start_date}
+                    onChange={e => setSeason(s.uid, "start_date", e.target.value)}
+                    className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#1B4332] focus:outline-none focus:ring-1 focus:ring-[#1B4332]"
+                  />
+                  <span className="text-sm text-gray-400">〜</span>
+                  <input
+                    type="date"
+                    value={s.end_date}
+                    onChange={e => setSeason(s.uid, "end_date", e.target.value)}
+                    className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#1B4332] focus:outline-none focus:ring-1 focus:ring-[#1B4332]"
+                  />
+
+                  <button
+                    type="button"
+                    onClick={() => removeSeason(s.uid)}
+                    className="rounded-lg border border-red-200 px-3 py-2 text-sm text-red-500 hover:bg-red-50 transition-colors"
+                  >
+                    削除
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            <div className="flex items-center justify-between">
+              <button
+                type="button"
+                onClick={addSeason}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-dashed border-gray-300 px-4 py-2 text-sm text-gray-600 hover:border-[#2D6A4F] hover:text-[#1B4332] transition-colors"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                </svg>
+                期間を追加
+              </button>
+              <button
+                type="button"
+                onClick={saveSeasons}
+                disabled={savingSeasons}
+                className="rounded-lg bg-[#1B4332] px-5 py-2 text-sm font-semibold text-white hover:bg-[#2D6A4F] transition-colors disabled:opacity-50"
+              >
+                {savingSeasons ? "保存中..." : "保存"}
+              </button>
+            </div>
+          </div>
+        )}
       </section>
 
       {/* ── Section 3: Pricing Overrides ──────────────────────────────────── */}
