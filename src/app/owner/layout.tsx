@@ -6,9 +6,10 @@ import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider";
 
 const NAV_ITEMS = [
-  { href: "/owner", label: "ダッシュボード" },
-  { href: "/owner/facilities", label: "施設管理" },
-  { href: "/owner/inquiries", label: "問い合わせ" },
+  { href: "/owner",          label: "ダッシュボード"   },
+  { href: "/owner/calendar", label: "物件カレンダー"   },
+  { href: "/owner/facilities", label: "施設管理"       },
+  { href: "/owner/inquiries",  label: "問い合わせ"     },
   { href: "/owner/reservations", label: "予約リクエスト" },
 ] as const;
 

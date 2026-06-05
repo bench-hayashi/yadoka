@@ -89,6 +89,44 @@
 
 施設ごとに複数のiCal URLを登録できる。同期時（`POST /api/ical/sync`）は登録された全URLを取得・統合し、`availability` の `source='ical'` レコードをまとめて洗い替える。`source='manual'` / `source='reservation'` の日付は上書きしない。
 
+## 複数物件カレンダー（/owner/calendar）
+
+縦軸＝物件、横軸＝日付のマトリクス表示。オーナーが全物件の空室状況と料金を一覧で確認・編集できる。
+
+### 画面構成
+
+- **ヘッダー行**：日付（M/D）と曜日。土＝青、日＝赤、今日＝青ハイライト
+- **施設列**（sticky）：横スクロール時も左端に固定
+- **セル**：上段に空室マーク、下段に料金（ミニマム料金のみ表示）
+  - `◯` 緑：空室
+  - `✕` グレー：手動満室（`source='manual'`）
+  - `✕(外)` オレンジ：iCal連携（`source='ical'`）
+  - `✕(予)` 青：予約承認（`source='reservation'`）
+  - 料金が amber 太字：`pricing_overrides` による上書き中
+
+### セルクリック操作
+
+セルをクリックするとモーダルが開き以下の操作ができる：
+
+- **空室切替**：`availability` テーブルを upsert（`source='manual'`, `onConflict='facility_id,target_date'`）。`source='ical'` / `'reservation'` の日はモーダル内で警告を表示
+- **料金上書き**：`pricing_overrides` に upsert（`onConflict='facility_id,target_date'`）。定額（`flat`）またはミニマム上書き（`minimum`）を選択
+- **上書き解除**：`pricing_overrides` から該当レコードを delete し、セルの表示価格を `basePrice`（シーズンルール由来）に戻す
+
+操作後は該当セルのみ差分更新（全体再取得なし）。
+
+### データ取得（`src/lib/ownerCalendar.ts`）
+
+`getOwnerCalendarData(ownerId, startDate, days)` が担当。DB呼び出しは2ラウンドトリップ固定：
+
+1. `facilities`（owner_id で絞り込み）
+2. 以下5本を `Promise.all` で並列取得：`availability`・`pricing_rules`・`seasons`・`simple_seasons`・`pricing_overrides`
+
+全データをメモリ上の Map で処理し、セル計算は O(施設数 × 日数)。10施設 × 14日で推定 200〜400ms。
+
+### URL パラメータ連携
+
+`/owner/calendar?start=YYYY-MM-DD` でその日付を起点に表示。問い合わせ詳細ページから希望日程を元にジャンプ可能。
+
 ## 料金計算モデル
 
 ### シーズン判定（優先順位）

@@ -114,12 +114,20 @@ export default function OwnerDashboard() {
       {/* ページヘッダー */}
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900">ダッシュボード</h1>
-        <Link
-          href="/owner/facilities/new"
-          className="rounded-lg bg-[#1B4332] px-4 py-2 text-sm font-semibold text-white hover:bg-[#2D6A4F] transition-colors"
-        >
-          + 新しい施設を登録
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link
+            href="/owner/calendar"
+            className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
+          >
+            物件カレンダーを見る
+          </Link>
+          <Link
+            href="/owner/facilities/new"
+            className="rounded-lg bg-[#1B4332] px-4 py-2 text-sm font-semibold text-white hover:bg-[#2D6A4F] transition-colors"
+          >
+            + 新しい施設を登録
+          </Link>
+        </div>
       </div>
 
       {/* 施設ステータス サマリー */}
