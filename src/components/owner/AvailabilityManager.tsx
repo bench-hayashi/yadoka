@@ -5,8 +5,23 @@ import { supabase } from "@/lib/supabase";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-type AvailEntry = { id: string | null; is_available: boolean };
+type AvailEntry = { id: string | null; is_available: boolean; source: string | null };
 type AvailMap   = Map<string, AvailEntry>;
+
+type ImportSource = {
+  id:             string;
+  name:           string;
+  url:            string;
+  last_synced_at: string | null;
+};
+
+type SyncSourceResult = {
+  name:   string;
+  url:    string;
+  status: "ok" | "error";
+  count:  number;
+  error?: string;
+};
 
 type Props = { facilityId: string };
 
@@ -34,6 +49,12 @@ function daysIn(d: Date): number {
 
 function monthLabel(d: Date): string {
   return `${d.getFullYear()}年${d.getMonth() + 1}月`;
+}
+
+function fmtSyncTime(iso: string | null): string {
+  if (!iso) return "未同期";
+  const d = new Date(iso);
+  return `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
 }
 
 const TODAY = new Date();
@@ -110,12 +131,13 @@ function CalendarMonth({ month, avail, toggling, bulking, onToggle, onBulk }: Ca
           if (!day) {
             return <div key={`blank-${i}`} className="aspect-square border-t border-gray-50" />;
           }
-          const ds      = `${year}-${String(mo + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-          const isPast  = ds < TODAY_STR;
-          const entry   = avail.get(ds);
+          const ds       = `${year}-${String(mo + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+          const isPast   = ds < TODAY_STR;
+          const entry    = avail.get(ds);
           // Dates without a record are treated as available by default
-          const isAvail = entry ? entry.is_available : true;
-          const isBusy  = !isAvail;
+          const isAvail  = entry ? entry.is_available : true;
+          const isBusy   = !isAvail;
+          const isIcal   = isBusy && entry?.source === "ical";
           const inFlight = toggling.has(ds);
 
           return (
@@ -124,11 +146,13 @@ function CalendarMonth({ month, avail, toggling, bulking, onToggle, onBulk }: Ca
               type="button"
               onClick={() => !isPast && !inFlight && onToggle(ds)}
               disabled={isPast}
-              title={ds}
+              title={isIcal ? `${ds}（iCal連携）` : ds}
               className={[
                 "aspect-square flex flex-col items-center justify-center gap-0.5 text-xs border-t border-gray-50 select-none transition-colors",
                 isPast
                   ? "bg-gray-50 text-gray-300 cursor-not-allowed"
+                  : isIcal
+                  ? "bg-amber-50 text-amber-600 hover:bg-amber-100 cursor-pointer"
                   : isBusy
                   ? "bg-red-50 text-red-500 hover:bg-red-100 cursor-pointer"
                   : "bg-white text-green-600 hover:bg-green-50 cursor-pointer",
@@ -150,15 +174,49 @@ function CalendarMonth({ month, avail, toggling, bulking, onToggle, onBulk }: Ca
 // ── AvailabilityManager ───────────────────────────────────────────────────────
 
 export default function AvailabilityManager({ facilityId }: Props) {
-  const [base,     setBase]     = useState(() => new Date(TODAY.getFullYear(), TODAY.getMonth(), 1));
-  const [avail,    setAvail]    = useState<AvailMap>(new Map());
-  const [toggling, setToggling] = useState<Set<string>>(new Set());
-  const [bulking,  setBulking]  = useState(false);
+  // Calendar state
+  const [base,       setBase]       = useState(() => new Date(TODAY.getFullYear(), TODAY.getMonth(), 1));
+  const [avail,      setAvail]      = useState<AvailMap>(new Map());
+  const [toggling,   setToggling]   = useState<Set<string>>(new Set());
+  const [bulking,    setBulking]    = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
   const fetchedRef = useRef<Set<string>>(new Set());
+
+  // iCal state
+  const [exportUrl,     setExportUrl]     = useState("");
+  const [exportCopied,  setExportCopied]  = useState(false);
+  const [importSources, setImportSources] = useState<ImportSource[]>([]);
+  const [syncing,       setSyncing]       = useState(false);
+  const [syncResults,   setSyncResults]   = useState<SyncSourceResult[] | null>(null);
+  const [newName,       setNewName]       = useState("");
+  const [newUrl,        setNewUrl]        = useState("");
+  const [adding,        setAdding]        = useState(false);
 
   const months = [base, addMonths(base, 1), addMonths(base, 2)];
 
-  // ── Fetch ────────────────────────────────────────────────────────────────
+  // ── Export URL ───────────────────────────────────────────────────────────
+
+  useEffect(() => {
+    setExportUrl(`${window.location.origin}/api/ical/${facilityId}`);
+  }, [facilityId]);
+
+  // ── Load import sources ──────────────────────────────────────────────────
+
+  async function loadSources() {
+    const { data } = await supabase
+      .from("ical_import_sources")
+      .select("id, name, url, last_synced_at")
+      .eq("facility_id", facilityId)
+      .order("created_at");
+    setImportSources(data ?? []);
+  }
+
+  useEffect(() => {
+    loadSources();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [facilityId]);
+
+  // ── Fetch availability ───────────────────────────────────────────────────
 
   useEffect(() => {
     const toFetch = months.filter(m => !fetchedRef.current.has(mkey(m)));
@@ -173,7 +231,7 @@ export default function AvailabilityManager({ facilityId }: Props) {
 
     supabase
       .from("availability")
-      .select("id, target_date, is_available")
+      .select("id, target_date, is_available, source")
       .eq("facility_id", facilityId)
       .gte("target_date", rangeStart)
       .lte("target_date", rangeEnd)
@@ -182,13 +240,86 @@ export default function AvailabilityManager({ facilityId }: Props) {
         setAvail(prev => {
           const next = new Map(prev);
           for (const row of data) {
-            next.set(row.target_date, { id: row.id, is_available: !!row.is_available });
+            next.set(row.target_date, {
+              id:           row.id,
+              is_available: !!row.is_available,
+              source:       row.source ?? null,
+            });
           }
           return next;
         });
       });
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [base, facilityId]);
+  }, [base, facilityId, refreshKey]);
+
+  // ── iCal: Copy export URL ────────────────────────────────────────────────
+
+  function copyExportUrl() {
+    navigator.clipboard.writeText(exportUrl).then(() => {
+      setExportCopied(true);
+      setTimeout(() => setExportCopied(false), 2000);
+    });
+  }
+
+  // ── iCal: Add source ─────────────────────────────────────────────────────
+
+  async function addSource() {
+    const name = newName.trim();
+    const url  = newUrl.trim();
+    if (!name || !url) return;
+
+    setAdding(true);
+    await supabase
+      .from("ical_import_sources")
+      .insert({ facility_id: facilityId, name, url });
+    setNewName("");
+    setNewUrl("");
+    await loadSources();
+    setAdding(false);
+  }
+
+  // ── iCal: Delete source ──────────────────────────────────────────────────
+
+  async function deleteSource(id: string) {
+    await supabase.from("ical_import_sources").delete().eq("id", id);
+    await loadSources();
+  }
+
+  // ── iCal: Sync all ───────────────────────────────────────────────────────
+
+  async function syncAll() {
+    setSyncing(true);
+    setSyncResults(null);
+
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.access_token) {
+      setSyncing(false);
+      return;
+    }
+
+    try {
+      const res  = await fetch("/api/ical/sync", {
+        method:  "POST",
+        headers: {
+          "Content-Type":  "application/json",
+          "Authorization": `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ facilityId }),
+      });
+      const json = await res.json();
+      setSyncResults(json.sources ?? []);
+    } catch {
+      setSyncResults([]);
+    }
+
+    // Reload availability
+    fetchedRef.current = new Set();
+    setAvail(new Map());
+    setRefreshKey(k => k + 1);
+
+    await loadSources();
+    setSyncing(false);
+  }
 
   // ── Toggle ───────────────────────────────────────────────────────────────
 
@@ -200,7 +331,7 @@ export default function AvailabilityManager({ facilityId }: Props) {
     setToggling(prev => new Set(prev).add(ds));
     setAvail(prev => {
       const next = new Map(prev);
-      next.set(ds, { id: current?.id ?? null, is_available: newValue });
+      next.set(ds, { id: current?.id ?? null, is_available: newValue, source: current?.source ?? null });
       return next;
     });
 
@@ -223,7 +354,7 @@ export default function AvailabilityManager({ facilityId }: Props) {
       if (data?.id) {
         setAvail(prev => {
           const next = new Map(prev);
-          next.set(ds, { id: data.id, is_available: newValue });
+          next.set(ds, { id: data.id, is_available: newValue, source: "manual" });
           return next;
         });
       }
@@ -255,7 +386,7 @@ export default function AvailabilityManager({ facilityId }: Props) {
     setAvail(prev => {
       const next = new Map(prev);
       for (const ds of dates) {
-        next.set(ds, { id: prev.get(ds)?.id ?? null, is_available: isAvailable });
+        next.set(ds, { id: prev.get(ds)?.id ?? null, is_available: isAvailable, source: "manual" });
       }
       return next;
     });
@@ -288,7 +419,7 @@ export default function AvailabilityManager({ facilityId }: Props) {
       setAvail(prev => {
         const next = new Map(prev);
         for (const row of data) {
-          next.set(row.target_date, { id: row.id, is_available: isAvailable });
+          next.set(row.target_date, { id: row.id, is_available: isAvailable, source: "manual" });
         }
         return next;
       });
@@ -300,8 +431,127 @@ export default function AvailabilityManager({ facilityId }: Props) {
   // ── Render ────────────────────────────────────────────────────────────────
 
   return (
-    <div className="space-y-5">
-      {/* Navigation */}
+    <div className="space-y-6">
+
+      {/* ── iCal export ──────────────────────────────────────────────────── */}
+      <div className="rounded-xl border border-gray-200 bg-white p-5 space-y-3">
+        <h3 className="text-sm font-semibold text-gray-900">iCalエクスポート</h3>
+        <p className="text-xs text-gray-500">
+          このURLを他の予約サイトに登録すると、YADOKAの予約状況を同期できます。
+        </p>
+        <div className="flex items-center gap-2">
+          <input
+            readOnly
+            value={exportUrl}
+            className="flex-1 rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-xs text-gray-700 font-mono"
+          />
+          <button
+            type="button"
+            onClick={copyExportUrl}
+            className="shrink-0 rounded-lg border border-gray-300 px-3 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+          >
+            {exportCopied ? "コピーしました" : "コピー"}
+          </button>
+        </div>
+      </div>
+
+      {/* ── iCal import ──────────────────────────────────────────────────── */}
+      <div className="rounded-xl border border-gray-200 bg-white p-5 space-y-4">
+        <div className="space-y-2">
+          <h3 className="text-sm font-semibold text-gray-900">iCalインポート</h3>
+          <p className="text-xs text-gray-500">
+            各予約サイトのiCal URLを登録してください。1つの施設に複数サイトの
+            URLを登録できます。登録したすべてのサイトの予約日が満室になります。
+          </p>
+          <p className="text-xs text-amber-700 bg-amber-50 rounded-lg px-3 py-2">
+            ⚠️ 必ず該当する物件のURLを登録してください。物件IDの自動照合は
+            行われないため、別物件のURLを登録すると誤った日がブロックされます。
+          </p>
+        </div>
+
+        {/* Registered sources list */}
+        {importSources.length > 0 && (
+          <ul className="divide-y divide-gray-100 rounded-lg border border-gray-200">
+            {importSources.map(src => (
+              <li key={src.id} className="flex items-center gap-3 px-4 py-3">
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium text-gray-900 truncate">{src.name}</p>
+                  <p className="text-xs text-gray-400 truncate font-mono">{src.url}</p>
+                  <p className="text-xs text-gray-400">最終同期 {fmtSyncTime(src.last_synced_at)}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => deleteSource(src.id)}
+                  className="shrink-0 rounded-md px-2 py-1 text-xs text-red-600 hover:bg-red-50 transition-colors"
+                >
+                  削除
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+
+        {/* Add source form */}
+        <div className="space-y-2">
+          <p className="text-xs font-medium text-gray-700">iCal元を追加</p>
+          <div className="flex gap-2">
+            <input
+              value={newName}
+              onChange={e => setNewName(e.target.value)}
+              placeholder="サイト名（例：Airbnb）"
+              className="w-40 rounded-lg border border-gray-300 px-3 py-2 text-xs placeholder:text-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            />
+            <input
+              value={newUrl}
+              onChange={e => setNewUrl(e.target.value)}
+              placeholder="iCal URL"
+              className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-xs placeholder:text-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            />
+            <button
+              type="button"
+              onClick={addSource}
+              disabled={adding || !newName.trim() || !newUrl.trim()}
+              className="shrink-0 rounded-lg bg-blue-600 px-4 py-2 text-xs font-medium text-white hover:bg-blue-700 transition-colors disabled:opacity-50"
+            >
+              追加
+            </button>
+          </div>
+        </div>
+
+        {/* Sync button + results */}
+        <div className="space-y-3 border-t border-gray-100 pt-4">
+          <button
+            type="button"
+            onClick={syncAll}
+            disabled={syncing || importSources.length === 0}
+            className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-xs font-medium text-white hover:bg-indigo-700 transition-colors disabled:opacity-50"
+          >
+            {syncing && (
+              <svg className="h-3.5 w-3.5 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+              </svg>
+            )}
+            {syncing ? "同期中..." : "すべて同期"}
+          </button>
+
+          {syncResults && syncResults.length > 0 && (
+            <div className="rounded-lg bg-gray-50 px-4 py-3 space-y-1">
+              {syncResults.map((r, i) => (
+                <p key={i} className="text-xs">
+                  <span className="font-medium text-gray-800">{r.name}</span>
+                  {r.status === "ok"
+                    ? <span className="text-green-600">：{r.count}件同期</span>
+                    : <span className="text-red-600">：取得失敗</span>
+                  }
+                </p>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ── Navigation ───────────────────────────────────────────────────── */}
       <div className="flex items-center justify-between">
         <button
           type="button"
@@ -328,7 +578,7 @@ export default function AvailabilityManager({ facilityId }: Props) {
         </button>
       </div>
 
-      {/* Legend */}
+      {/* ── Legend ───────────────────────────────────────────────────────── */}
       <div className="flex flex-wrap gap-5 text-xs text-gray-500">
         <span className="flex items-center gap-1.5">
           <span className="flex h-5 w-5 items-center justify-center rounded border border-green-200 bg-white text-green-600 text-[10px]">◯</span>
@@ -336,7 +586,11 @@ export default function AvailabilityManager({ facilityId }: Props) {
         </span>
         <span className="flex items-center gap-1.5">
           <span className="flex h-5 w-5 items-center justify-center rounded border border-red-200 bg-red-50 text-red-500 text-[10px]">✕</span>
-          満室
+          満室（手動）
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="flex h-5 w-5 items-center justify-center rounded border border-amber-200 bg-amber-50 text-amber-600 text-[10px]">✕</span>
+          満室（iCal連携）
         </span>
         <span className="flex items-center gap-1.5">
           <span className="inline-block h-5 w-5 rounded bg-gray-100 border border-gray-200" />
@@ -344,7 +598,7 @@ export default function AvailabilityManager({ facilityId }: Props) {
         </span>
       </div>
 
-      {/* 3-month calendars */}
+      {/* ── 3-month calendars ────────────────────────────────────────────── */}
       <div className="space-y-4">
         {months.map(m => (
           <CalendarMonth

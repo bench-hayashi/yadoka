@@ -52,6 +52,8 @@
 ### facilities
 `id`, `owner_id`, `name`, `slug`, `description`, `area_id`, `address`, `latitude`, `longitude`, `max_guests`, `bedrooms`, `bathrooms`, `parking_spaces`, `checkin_time`, `checkout_time`, `min_nights`, `license_type`, `license_number`, `status`, `is_published`, `published_at`, `created_at`, `updated_at`
 
+> `ical_import_url` カラムは未使用。iCalインポートURLは `ical_import_sources` テーブルで管理する。
+
 ### facility_images
 `id`, `facility_id`, `url`, `alt_text`, `sort_order`, `is_hero`, `created_at`
 
@@ -81,6 +83,11 @@
 
 ### reservation_requests
 `id`, `facility_id`, `user_id`, `guest_name`, `guest_email`, `guest_phone`, `guest_count`, `adults_count`, `children_count`, `infants_count`, `pets_count`, `checkin_date`, `checkout_date`, `total_price`, `message`, `status`, `owner_reply`, `created_at`, `updated_at`
+
+### ical_import_sources
+`id`, `facility_id`, `name`, `url`, `last_synced_at`, `created_at`
+
+施設ごとに複数のiCal URLを登録できる。同期時（`POST /api/ical/sync`）は登録された全URLを取得・統合し、`availability` の `source='ical'` レコードをまとめて洗い替える。`source='manual'` / `source='reservation'` の日付は上書きしない。
 
 ## 料金計算モデル
 
