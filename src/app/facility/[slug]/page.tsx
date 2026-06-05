@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import type { Metadata } from "next";
-import { getFacilityBySlug, getAvailability, getLowestPrice } from "@/lib/facilities";
+import { getFacilityBySlug, getAvailability, getPricingOverrides, getLowestPrice } from "@/lib/facilities";
 import PhotoGallery from "@/components/PhotoGallery";
 import PricingTable from "@/components/PricingTable";
 import FavoriteButton from "@/components/FavoriteButton";
@@ -61,11 +61,10 @@ export default async function FacilityPage({ params }: Props) {
   const facility = await getFacilityBySlug(slug);
   if (!facility) notFound();
 
-  const availabilityData = await getAvailability(
-    Number(facility.id),
-    toDateStr(today),
-    toDateStr(endDate),
-  );
+  const [availabilityData, overridesData] = await Promise.all([
+    getAvailability(Number(facility.id), toDateStr(today), toDateStr(endDate)),
+    getPricingOverrides(Number(facility.id), toDateStr(today), toDateStr(endDate)),
+  ]);
 
   const photos = facility.facility_images.map((img) => ({
     url: img.url,
@@ -199,7 +198,16 @@ export default async function FacilityPage({ params }: Props) {
             {/* 空室カレンダー */}
             <section>
               <h2 className="text-lg font-bold text-gray-900 mb-4">空室状況</h2>
-              <AvailabilityCalendar availability={availabilityForCalendar} />
+              <AvailabilityCalendar
+                availability={availabilityForCalendar}
+                facilityId={Number(facility.id)}
+                pricing={{
+                  rules:         facility.pricing_rules,
+                  seasons:       facility.seasons,
+                  simpleSeasons: facility.simple_seasons,
+                  overrides:     overridesData,
+                }}
+              />
             </section>
 
             {/* FAQ */}
@@ -270,84 +278,100 @@ export default async function FacilityPage({ params }: Props) {
           </div>
 
           {/* 右カラム：サイドバー */}
-          <aside className="lg:w-80 shrink-0">
-            <div className="sticky top-20 space-y-4">
-              {/* 料金目安 */}
-              <div className="rounded-2xl border border-gray-200 bg-white shadow-sm p-6 space-y-5">
-                <p className="text-2xl font-bold text-gray-900">
-                  {lowestPrice !== null ? (
-                    <>
-                      <span className="text-[#1B4332]">
-                        ¥{lowestPrice.toLocaleString("ja-JP")}
-                      </span>
-                      <span className="text-sm font-normal text-gray-400">〜 / 泊</span>
-                    </>
-                  ) : (
-                    <span className="text-base font-normal text-gray-400">料金はお問い合わせ</span>
-                  )}
-                </p>
+          <aside className="lg:w-80 shrink-0 space-y-4">
 
-                {/* 宿泊条件 */}
-                <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm border-t border-gray-100 pt-4">
-                  <dt className="text-gray-400">最大定員</dt>
-                  <dd className="font-medium text-gray-900">最大{facility.max_guests}名</dd>
-
-                  {facility.bedrooms != null && (
-                    <>
-                      <dt className="text-gray-400">寝室</dt>
-                      <dd className="font-medium text-gray-900">{facility.bedrooms}室</dd>
-                    </>
-                  )}
-                  {facility.bathrooms != null && (
-                    <>
-                      <dt className="text-gray-400">バスルーム</dt>
-                      <dd className="font-medium text-gray-900">{facility.bathrooms}室</dd>
-                    </>
-                  )}
-                  {facility.parking_spaces != null && (
-                    <>
-                      <dt className="text-gray-400">駐車場</dt>
-                      <dd className="font-medium text-gray-900">{facility.parking_spaces}台</dd>
-                    </>
-                  )}
-                  {facility.checkin_time && (
-                    <>
-                      <dt className="text-gray-400">チェックイン</dt>
-                      <dd className="font-medium text-gray-900">{facility.checkin_time}〜</dd>
-                    </>
-                  )}
-                  {facility.checkout_time && (
-                    <>
-                      <dt className="text-gray-400">チェックアウト</dt>
-                      <dd className="font-medium text-gray-900">〜{facility.checkout_time}</dd>
-                    </>
-                  )}
-                  {facility.min_nights != null && (
-                    <>
-                      <dt className="text-gray-400">最低泊数</dt>
-                      <dd className="font-medium text-gray-900">{facility.min_nights}泊〜</dd>
-                    </>
-                  )}
-                </dl>
-
-                {/* 営業許可情報 */}
-                {(facility.license_type || facility.license_number) && (
-                  <div className="border-t border-gray-100 pt-4">
-                    <p className="text-xs font-semibold text-gray-500 mb-1.5">営業許可情報</p>
-                    <div className="space-y-0.5">
-                      {facility.license_type && (
-                        <p className="text-xs text-gray-400">許可種別：{facility.license_type}</p>
-                      )}
-                      {facility.license_number && (
-                        <p className="text-xs text-gray-400">許可番号：{facility.license_number}</p>
-                      )}
-                    </div>
-                  </div>
+            {/* ① 価格・条件パネル（通常スクロール、追従しない） */}
+            <div className="rounded-2xl border border-gray-200 bg-white shadow-sm p-6 space-y-5">
+              <p className="text-2xl font-bold text-gray-900">
+                {lowestPrice !== null ? (
+                  <>
+                    <span className="text-[#1B4332]">
+                      ¥{lowestPrice.toLocaleString("ja-JP")}
+                    </span>
+                    <span className="text-sm font-normal text-gray-400">〜 / 泊</span>
+                  </>
+                ) : (
+                  <span className="text-base font-normal text-gray-400">料金はお問い合わせ</span>
                 )}
+              </p>
 
-              </div>
+              {/* 宿泊条件（全項目） */}
+              <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm border-t border-gray-100 pt-4">
+                <dt className="text-gray-400">最大定員</dt>
+                <dd className="font-medium text-gray-900">最大{facility.max_guests}名</dd>
+
+                {facility.bedrooms != null && (
+                  <>
+                    <dt className="text-gray-400">寝室</dt>
+                    <dd className="font-medium text-gray-900">{facility.bedrooms}室</dd>
+                  </>
+                )}
+                {facility.bathrooms != null && (
+                  <>
+                    <dt className="text-gray-400">バスルーム</dt>
+                    <dd className="font-medium text-gray-900">{facility.bathrooms}室</dd>
+                  </>
+                )}
+                {facility.parking_spaces != null && (
+                  <>
+                    <dt className="text-gray-400">駐車場</dt>
+                    <dd className="font-medium text-gray-900">{facility.parking_spaces}台</dd>
+                  </>
+                )}
+                {facility.checkin_time && (
+                  <>
+                    <dt className="text-gray-400">チェックイン</dt>
+                    <dd className="font-medium text-gray-900">{facility.checkin_time}〜</dd>
+                  </>
+                )}
+                {facility.checkout_time && (
+                  <>
+                    <dt className="text-gray-400">チェックアウト</dt>
+                    <dd className="font-medium text-gray-900">〜{facility.checkout_time}</dd>
+                  </>
+                )}
+                {facility.min_nights != null && (
+                  <>
+                    <dt className="text-gray-400">最低泊数</dt>
+                    <dd className="font-medium text-gray-900">{facility.min_nights}泊〜</dd>
+                  </>
+                )}
+              </dl>
+
+              {/* 営業許可情報 */}
+              {(facility.license_type || facility.license_number) && (
+                <div className="border-t border-gray-100 pt-4">
+                  <p className="text-xs font-semibold text-gray-500 mb-1.5">営業許可情報</p>
+                  <div className="space-y-0.5">
+                    {facility.license_type && (
+                      <p className="text-xs text-gray-400">許可種別：{facility.license_type}</p>
+                    )}
+                    {facility.license_number && (
+                      <p className="text-xs text-gray-400">許可番号：{facility.license_number}</p>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
-            <PriceSimulator facilityId={Number(facility.id)} facilitySlug={slug} />
+
+            {/* ② 料金シミュレーター（md以上でsticky、内部スクロール対応） */}
+            <div className="md:sticky md:top-4 md:max-h-[calc(100vh-2rem)] md:overflow-y-auto">
+              {/* 予約に必要な情報をコンパクトに統合 */}
+              <div className="mb-2 rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-600">
+                <span>最大{facility.max_guests}名</span>
+                {facility.min_nights != null && (
+                  <span>最低{facility.min_nights}泊〜</span>
+                )}
+                {facility.checkin_time && (
+                  <span>IN {facility.checkin_time}〜</span>
+                )}
+                {facility.checkout_time && (
+                  <span>OUT 〜{facility.checkout_time}</span>
+                )}
+              </div>
+              <PriceSimulator facilityId={Number(facility.id)} facilitySlug={slug} />
+            </div>
+
           </aside>
         </div>
       </div>

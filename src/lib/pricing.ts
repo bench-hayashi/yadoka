@@ -104,6 +104,50 @@ export function getSeason(
   return "low";
 }
 
+// ─── getDayMinPrice ───────────────────────────────────────────────────────────
+
+/**
+ * ある1日の「ミニマム料金」を返す（カレンダー表示用）。
+ * 優先順位：pricing_overrides → 詳細シーズン → 簡易シーズン → デフォルト(low)
+ * override は flat/minimum どちらも override_amount を表示価格として返す。
+ */
+export function getDayMinPrice(
+  dateStr: string,
+  facilityId: number,
+  detailedSeasons: { start_date: string; end_date: string; name: string }[],
+  simpleSeasons:   { month: number; season: string }[],
+  rules:           { season: string; day_type: string; minimum_price: number }[],
+  overrides:       { target_date: string; override_amount: number }[],
+): number | null {
+  // 1. 特定日上書き
+  const override = overrides.find(o => o.target_date === dateStr);
+  if (override) return override.override_amount;
+
+  // 2. 曜日判定（pricing.ts の getDayType と同ロジック）
+  const [y, mo, d] = dateStr.split("-").map(Number);
+  const dow = new Date(y, mo - 1, d).getDay();
+  const dayType: DayType = dow === 6 ? "weekend" : "weekday";
+
+  // 3. シーズン判定（getSeason と同ロジック）
+  let season = "low";
+  for (const s of detailedSeasons) {
+    if (dateStr >= s.start_date && dateStr <= s.end_date) {
+      season = s.name;
+      break;
+    }
+  }
+  if (season === "low") {
+    const month = parseInt(dateStr.split("-")[1], 10);
+    for (const s of simpleSeasons) {
+      if (s.month === month) { season = s.season; break; }
+    }
+  }
+
+  // 4. ルール検索
+  const rule = rules.find(r => r.season === season && r.day_type === dayType);
+  return rule?.minimum_price ?? null;
+}
+
 // ─── calculateTotalPrice ──────────────────────────────────────────────────────
 
 export async function calculateTotalPrice({

@@ -1,17 +1,33 @@
 "use client";
 
 import { useState } from "react";
+import { getDayMinPrice } from "@/lib/pricing";
+
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 type AvailabilityEntry = {
-  target_date: string;
+  target_date:  string;
   is_available: boolean;
+};
+
+type PricingProps = {
+  rules:         { season: string; day_type: string; minimum_price: number }[];
+  seasons:       { start_date: string; end_date: string; name: string }[];
+  simpleSeasons: { month: number; season: string }[];
+  overrides:     { target_date: string; override_amount: number }[];
 };
 
 type Props = {
   availability: AvailabilityEntry[];
+  facilityId?:  number;
+  pricing?:     PricingProps;
 };
 
+// ─── Constants ────────────────────────────────────────────────────────────────
+
 const WEEKDAYS = ["日", "月", "火", "水", "木", "金", "土"] as const;
+
+// ─── Utilities ────────────────────────────────────────────────────────────────
 
 function toYMD(date: Date): string {
   return date.toISOString().split("T")[0];
@@ -19,7 +35,7 @@ function toYMD(date: Date): string {
 
 function buildMonthGrid(year: number, month: number): (Date | null)[] {
   const firstDay = new Date(year, month, 1);
-  const lastDay = new Date(year, month + 1, 0);
+  const lastDay  = new Date(year, month + 1, 0);
   const cells: (Date | null)[] = Array(firstDay.getDay()).fill(null);
   for (let d = 1; d <= lastDay.getDate(); d++) {
     cells.push(new Date(year, month, d));
@@ -27,11 +43,18 @@ function buildMonthGrid(year: number, month: number): (Date | null)[] {
   return cells;
 }
 
+function fmtPrice(price: number): string {
+  if (price >= 10000) return `${parseFloat((price / 10000).toFixed(1))}万`;
+  return `¥${price.toLocaleString()}`;
+}
+
+// ─── Cell status ──────────────────────────────────────────────────────────────
+
 type CellStatus = "available" | "unavailable" | "nodata" | "past";
 
 function getCellStatus(
-  date: Date,
-  today: Date,
+  date:     Date,
+  today:    Date,
   availMap: Map<string, boolean>,
 ): CellStatus {
   if (date < today) return "past";
@@ -40,16 +63,22 @@ function getCellStatus(
   return availMap.get(key) ? "available" : "unavailable";
 }
 
+// ─── MonthCalendar ────────────────────────────────────────────────────────────
+
 function MonthCalendar({
   year,
   month,
   availMap,
   today,
+  facilityId,
+  pricing,
 }: {
-  year: number;
-  month: number;
-  availMap: Map<string, boolean>;
-  today: Date;
+  year:        number;
+  month:       number;
+  availMap:    Map<string, boolean>;
+  today:       Date;
+  facilityId?: number;
+  pricing?:    PricingProps;
 }) {
   const cells = buildMonthGrid(year, month);
   const label = `${year}年${month + 1}月`;
@@ -73,9 +102,11 @@ function MonthCalendar({
         {/* 日付セル */}
         {cells.map((date, i) => {
           if (!date) {
-            return <div key={`empty-${i}`} className="bg-white py-2" />;
+            return <div key={`empty-${i}`} className="bg-white py-2 min-h-[3.5rem]" />;
           }
-          const status = getCellStatus(date, today, availMap);
+
+          const dateStr  = toYMD(date);
+          const status   = getCellStatus(date, today, availMap);
           const dayOfWeek = date.getDay();
 
           const bgClass =
@@ -94,17 +125,45 @@ function MonthCalendar({
               ? "text-blue-400"
               : "text-gray-700";
 
+          const price =
+            pricing && facilityId && status === "available"
+              ? getDayMinPrice(
+                  dateStr,
+                  facilityId,
+                  pricing.seasons,
+                  pricing.simpleSeasons,
+                  pricing.rules,
+                  pricing.overrides,
+                )
+              : null;
+
           return (
-            <div key={toYMD(date)} className={`${bgClass} py-2 flex flex-col items-center gap-0.5`}>
-              <span className={`text-xs ${dateColor}`}>{date.getDate()}</span>
+            <div
+              key={dateStr}
+              className={`${bgClass} py-1.5 flex flex-col items-center gap-px min-h-[3.5rem]`}
+            >
+              <span className={`text-xs leading-tight ${dateColor}`}>
+                {date.getDate()}
+              </span>
+
               {status === "past" ? (
-                <span className="text-gray-200 text-xs">−</span>
+                <span className="text-gray-200 text-[10px] leading-tight">−</span>
               ) : status === "available" ? (
-                <span className="text-green-500 font-bold text-xs">○</span>
+                <>
+                  <span className="text-green-500 font-bold text-xs leading-tight">○</span>
+                  <span className="text-[10px] leading-tight text-gray-400 tabular-nums">
+                    {price !== null ? fmtPrice(price) : ""}
+                  </span>
+                </>
               ) : status === "unavailable" ? (
-                <span className="text-red-400 text-xs">✕</span>
+                <>
+                  <span className="text-red-400 text-xs leading-tight">✕</span>
+                  {pricing && (
+                    <span className="text-[10px] leading-tight text-gray-300">―</span>
+                  )}
+                </>
               ) : (
-                <span className="text-gray-300 text-xs">−</span>
+                <span className="text-gray-300 text-[10px] leading-tight">−</span>
               )}
             </div>
           );
@@ -114,36 +173,30 @@ function MonthCalendar({
   );
 }
 
-export default function AvailabilityCalendar({ availability }: Props) {
+// ─── AvailabilityCalendar ─────────────────────────────────────────────────────
+
+export default function AvailabilityCalendar({ availability, facilityId, pricing }: Props) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  const [baseYear, setBaseYear] = useState(today.getFullYear());
+  const [baseYear,  setBaseYear]  = useState(today.getFullYear());
   const [baseMonth, setBaseMonth] = useState(today.getMonth());
 
   const availMap = new Map<string, boolean>(
     availability.map((a) => [a.target_date, a.is_available]),
   );
 
-  const secondYear = baseMonth === 11 ? baseYear + 1 : baseYear;
+  const secondYear  = baseMonth === 11 ? baseYear + 1 : baseYear;
   const secondMonth = baseMonth === 11 ? 0 : baseMonth + 1;
 
   const goPrev = () => {
-    if (baseMonth === 0) {
-      setBaseYear((y) => y - 1);
-      setBaseMonth(11);
-    } else {
-      setBaseMonth((m) => m - 1);
-    }
+    if (baseMonth === 0) { setBaseYear(y => y - 1); setBaseMonth(11); }
+    else setBaseMonth(m => m - 1);
   };
 
   const goNext = () => {
-    if (baseMonth === 11) {
-      setBaseYear((y) => y + 1);
-      setBaseMonth(0);
-    } else {
-      setBaseMonth((m) => m + 1);
-    }
+    if (baseMonth === 11) { setBaseYear(y => y + 1); setBaseMonth(0); }
+    else setBaseMonth(m => m + 1);
   };
 
   const isCurrentOrFuture =
@@ -177,16 +230,37 @@ export default function AvailabilityCalendar({ availability }: Props) {
 
       {/* 2ヶ月カレンダー */}
       <div className="flex flex-col sm:flex-row gap-6">
-        <MonthCalendar year={baseYear} month={baseMonth} availMap={availMap} today={today} />
-        <MonthCalendar year={secondYear} month={secondMonth} availMap={availMap} today={today} />
+        <MonthCalendar
+          year={baseYear} month={baseMonth}
+          availMap={availMap} today={today}
+          facilityId={facilityId} pricing={pricing}
+        />
+        <MonthCalendar
+          year={secondYear} month={secondMonth}
+          availMap={availMap} today={today}
+          facilityId={facilityId} pricing={pricing}
+        />
       </div>
 
       {/* 凡例 */}
       <div className="flex flex-wrap gap-4 pt-1 text-xs text-gray-500">
-        <span className="flex items-center gap-1"><span className="text-green-500 font-bold">○</span> 空室あり</span>
-        <span className="flex items-center gap-1"><span className="text-red-400">✕</span> 満室</span>
-        <span className="flex items-center gap-1"><span className="text-gray-300">−</span> データなし</span>
+        <span className="flex items-center gap-1">
+          <span className="text-green-500 font-bold">○</span> 空室あり
+        </span>
+        <span className="flex items-center gap-1">
+          <span className="text-red-400">✕</span> 満室
+        </span>
+        <span className="flex items-center gap-1">
+          <span className="text-gray-300">−</span> データなし
+        </span>
       </div>
+
+      {/* 補足テキスト */}
+      {pricing && (
+        <p className="text-xs text-gray-400 leading-relaxed">
+          表示料金は最低料金です。人数・ペットによる料金は料金シミュレーターでご確認ください。
+        </p>
+      )}
     </div>
   );
 }

@@ -51,6 +51,12 @@ export type SimpleSeason = {
   season: string;
 };
 
+export type PricingOverride = {
+  target_date:     string;
+  override_amount: number;
+  override_type:   string;
+};
+
 export type Availability = {
   id: string;
   facility_id: number;
@@ -199,6 +205,25 @@ export async function getAvailability(
     return [];
   }
 
+  return data ?? [];
+}
+
+export async function getPricingOverrides(
+  facilityId: number,
+  startDate: string,
+  endDate: string,
+): Promise<PricingOverride[]> {
+  const { data, error } = await supabase
+    .from("pricing_overrides")
+    .select("target_date, override_amount, override_type")
+    .eq("facility_id", facilityId)
+    .gte("target_date", startDate)
+    .lte("target_date", endDate);
+
+  if (error) {
+    console.error("getPricingOverrides error:", error.message);
+    return [];
+  }
   return data ?? [];
 }
 
