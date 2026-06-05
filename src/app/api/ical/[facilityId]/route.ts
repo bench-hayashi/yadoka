@@ -1,6 +1,8 @@
 import type { NextRequest } from "next/server";
-import ical from "ical-generator";
 import { supabase } from "@/lib/supabase";
+
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 export async function GET(
   _request: NextRequest,
@@ -37,6 +39,8 @@ export async function GET(
         .eq("status", "approved"),
     ]);
 
+  // ビルド時評価を避けるため動的import
+  const { default: ical } = await import("ical-generator");
   const calendar = ical({ name: `YADOKA - ${facility.name}` });
 
   for (const row of unavailableDates ?? []) {

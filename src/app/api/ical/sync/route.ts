@@ -1,7 +1,10 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import * as nodeIcal from "node-ical";
+import type * as nodeIcal from "node-ical";
+
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 type SourceResult = {
   name: string;
@@ -142,13 +145,14 @@ export async function POST(request: NextRequest) {
     .eq("facility_id", facilityId)
     .eq("source", "ical");
 
-  // 各URLをパース
+  // 各URLをパース（ビルド時評価を避けるため動的import）
+  const ical = await import("node-ical");
   const allDates = new Set<string>();
   const sourceResults: SourceResult[] = [];
 
   for (const src of sources) {
     try {
-      const cal = await nodeIcal.async.fromURL(src.url);
+      const cal = await ical.async.fromURL(src.url);
       const nights: string[] = [];
 
       for (const component of Object.values(cal)) {
