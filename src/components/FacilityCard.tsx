@@ -16,6 +16,8 @@ type Props = {
   tags: Tag[];
   heroImageUrl: string | null;
   lowestPrice: number | null;
+  /** ファーストビュー内のカードのみ true にして画像を優先読み込みする。 */
+  priority?: boolean;
 };
 
 export default function FacilityCard({
@@ -27,6 +29,7 @@ export default function FacilityCard({
   tags,
   heroImageUrl,
   lowestPrice,
+  priority = false,
 }: Props) {
   const visibleTags = tags.slice(0, 3);
 
@@ -47,7 +50,8 @@ export default function FacilityCard({
             fill
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
             className="object-cover transition-transform duration-300 group-hover:scale-105"
-            loading="lazy"
+            priority={priority}
+            loading={priority ? undefined : "lazy"}
           />
         ) : (
           <div className="absolute inset-0 flex items-center justify-center bg-gray-200">
