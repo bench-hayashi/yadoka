@@ -173,3 +173,31 @@
   "availability": { "isAvailable": boolean, "unavailableDates": string[] }
 }
 ```
+
+## セッションセキュリティ
+
+### Supabase 側（Proプラン移行時に設定予定）
+
+ProプランのAuth設定で以下を有効化する。MVP（無料プラン）では未設定。
+
+- **無操作タイムアウト（Inactivity timeout）**：一定時間操作がないセッションを失効させる
+- **絶対上限（Time-box / Maximum session length）**：操作の有無に関わらずセッションの最大有効期間を設ける
+- **JWT 有効期限**：アクセストークンの寿命を短くし、リフレッシュトークンでローテーションする
+
+### クライアント側 無操作タイムアウト
+
+`SessionTimeoutGuard`（`src/components/SessionTimeoutGuard.tsx`）＋ `useIdleTimeout`（`src/hooks/useIdleTimeout.ts`）でロール別に無操作タイムアウトを実装する。ログインユーザーの `profiles.role` を取得し、以下を適用：
+
+| ロール | 無操作タイムアウト | 備考 |
+|---|---|---|
+| `admin` | 30分 | 失効2分前に警告ダイアログ |
+| `owner` | 60分 | 失効2分前に警告ダイアログ |
+| `traveler` | 無効 | 旅行者は対象外（ガードを適用しない） |
+
+- 上記テーブルにないロールはタイムアウト無効（`enabled = false`）。
+- 警告ダイアログでは「継続」でタイマーをリセット、「ログアウト」で即時サインアウトできる。
+
+### セッション切れ時の遷移
+
+- 無操作タイムアウトで失効した場合：`supabase.auth.signOut()` 実行後、`/login?reason=timeout` へ誘導する。
+- ログインページは `reason` クエリに応じてメッセージを出し分ける（例：`timeout` → セッション切れの旨を表示）。
