@@ -4,6 +4,7 @@ import "./globals.css";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import AuthProvider from "@/components/AuthProvider";
+import SessionTimeoutGuard from "@/components/SessionTimeoutGuard";
 
 const notoSansJP = Noto_Sans_JP({
   weight: ["400", "500", "700"],
@@ -44,9 +45,11 @@ export default function RootLayout({
     <html lang="ja" className={`${notoSansJP.variable} h-full antialiased`}>
       <body className="min-h-screen flex flex-col font-[var(--font-noto-sans-jp)]">
         <AuthProvider>
-          <Header />
-          <main className="flex-1">{children}</main>
-          <Footer />
+          <SessionTimeoutGuard>
+            <Header />
+            <main className="flex-1">{children}</main>
+            <Footer />
+          </SessionTimeoutGuard>
         </AuthProvider>
       </body>
     </html>
