@@ -110,25 +110,33 @@ export default async function Home() {
       ))}
 
       {/* Hero */}
-      <section
-        className="relative overflow-hidden flex items-center min-h-[400px] sm:h-[480px]"
-        style={{ background: "linear-gradient(135deg, #0d2818 0%, #1B4332 40%, #2D6A4F 100%)" }}
-      >
-        {/* 背景画像（右側透かし） */}
-        <div className="absolute top-0 right-0 h-full w-full sm:w-[60%]">
-          <Image
-            src="https://images.unsplash.com/photo-1449158743715-0a90ebb6d2d8"
-            alt=""
-            fill
-            className="object-cover opacity-30 pointer-events-none"
-            priority
-            sizes="(max-width: 640px) 100vw, 60vw"
-          />
-        </div>
+      <section className="relative overflow-hidden flex items-center min-h-[400px] sm:h-[480px] bg-[#0d2818]">
+        {/* 背景画像（焚き火のある森の中の一棟貸し） */}
+        <Image
+          src="/hero-cabin.jpg"
+          alt=""
+          fill
+          priority
+          sizes="100vw"
+          // モバイルは焚き火と建物が入るよう中央〜右寄せ、PCは中央。
+          className="object-cover object-[60%_center] sm:object-center pointer-events-none"
+        />
 
-        {/* メインコンテンツ */}
+        {/* 可読性確保のための左→右グラデーションオーバーレイ */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background:
+              "linear-gradient(90deg, rgba(13,40,24,0.75) 0%, rgba(13,40,24,0.45) 50%, rgba(13,40,24,0.3) 100%)",
+          }}
+        />
+
+        {/* メインコンテンツ（画像の暗い左〜中央に配置） */}
         <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-0">
-          <div className="text-center sm:text-left sm:max-w-[55%]">
+          <div
+            className="text-center sm:text-left sm:max-w-[55%]"
+            style={{ textShadow: "0 1px 6px rgba(0,0,0,0.45)" }}
+          >
             <p
               className="text-[12px] font-medium tracking-[2px]"
               style={{ color: "#D8F3DC" }}
@@ -143,7 +151,7 @@ export default async function Home() {
             </h1>
             <p
               className="mt-3 text-[14px]"
-              style={{ color: "#A7C4B5" }}
+              style={{ color: "#D8F3DC" }}
             >
               空き状況と料金がひと目でわかる。全国の貸別荘を比較・検索。
             </p>
