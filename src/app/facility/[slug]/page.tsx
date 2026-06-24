@@ -66,10 +66,13 @@ export default async function FacilityPage({ params }: Props) {
     getPricingOverrides(Number(facility.id), toDateStr(today), toDateStr(endDate)),
   ]);
 
-  const photos = facility.facility_images.map((img) => ({
-    url: img.url,
-    alt_text: img.alt_text,
-  }));
+  // hero画像を先頭に（その他は取得済みの sort_order を維持。sortは安定ソート）。
+  const photos = [...facility.facility_images]
+    .sort((a, b) => Number(b.is_hero) - Number(a.is_hero))
+    .map((img) => ({
+      url: img.url,
+      alt_text: img.alt_text,
+    }));
 
   // タグをカテゴリ別にグループ化
   const tagsByCategory = new Map<string, { id: string; name: string; slug: string; icon_name: string | null }[]>();

@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import Image from "next/image";
 import { getOptimizedUrl } from "@/lib/cloudinary";
+import SizzleSlideshow from "@/components/SizzleSlideshow";
 
 type Photo = {
   url: string;
@@ -11,9 +12,11 @@ type Photo = {
 
 type Props = {
   photos: Photo[];
+  /** スライドショーに表示する最大枚数（先頭から。hero先頭順は呼び出し側で整える）。 */
+  slideshowMax?: number;
 };
 
-export default function PhotoGallery({ photos }: Props) {
+export default function PhotoGallery({ photos, slideshowMax = 6 }: Props) {
   const [modalIndex, setModalIndex] = useState<number | null>(null);
 
   const openModal = (index: number) => setModalIndex(index);
@@ -40,94 +43,63 @@ export default function PhotoGallery({ photos }: Props) {
 
   if (photos.length === 0) return null;
 
-  const [main, ...subs] = photos;
-  const gridSubs = subs.slice(0, 4);
+  const main = photos[0];
+  // 受動的に眺めるスライドショー用：先頭から最大 slideshowMax 枚に絞る。
+  const slideshowImages = photos.slice(0, slideshowMax).map((p) => ({
+    url: p.url,
+    alt: p.alt_text ?? "",
+  }));
+  const hasMultiple = photos.length >= 2;
 
   return (
     <>
-      {/* ギャラリーグリッド */}
-      <div className="w-full">
-        {/* PC：メイン＋サブグリッド */}
-        <div className="hidden md:grid md:grid-cols-2 gap-2 rounded-2xl overflow-hidden">
-          {/* メイン画像 */}
+      {/* 主画像エリア：複数枚はスライドショー、1枚以下は静止画 */}
+      <div className="relative w-full">
+        {hasMultiple ? (
+          <SizzleSlideshow images={slideshowImages} />
+        ) : (
           <button
             onClick={() => openModal(0)}
-            className="relative aspect-[4/3] overflow-hidden group"
-            aria-label={main.alt_text ?? "メイン画像を拡大"}
+            className="group relative block aspect-video w-full overflow-hidden rounded-2xl bg-gray-100"
+            aria-label={main.alt_text ?? "画像を拡大"}
           >
             <Image
               src={getOptimizedUrl(main.url, { width: 1280 })}
               alt={main.alt_text ?? ""}
               fill
-              sizes="(max-width: 1280px) 50vw, 640px"
+              sizes="(max-width: 1024px) 100vw, 66vw"
               className="object-cover transition-transform duration-300 group-hover:scale-105"
               priority
             />
           </button>
+        )}
 
-          {/* サブ画像 2×2 */}
-          <div className="grid grid-cols-2 gap-2">
-            {Array.from({ length: 4 }).map((_, i) => {
-              const photo = gridSubs[i];
-              return photo ? (
-                <button
-                  key={photo.url}
-                  onClick={() => openModal(i + 1)}
-                  className="relative aspect-[4/3] overflow-hidden group"
-                  aria-label={photo.alt_text ?? `画像${i + 2}を拡大`}
-                >
-                  <Image
-                    src={getOptimizedUrl(photo.url, { width: 640 })}
-                    alt={photo.alt_text ?? ""}
-                    fill
-                    sizes="(max-width: 1280px) 25vw, 320px"
-                    className="object-cover transition-transform duration-300 group-hover:scale-105"
-                    loading="lazy"
-                  />
-                  {/* 最後のセルで表示されていない画像がある場合は枚数オーバーレイ */}
-                  {i === 3 && photos.length > 5 && (
-                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                      <span className="text-white text-lg font-semibold">
-                        +{photos.length - 5}
-                      </span>
-                    </div>
-                  )}
-                </button>
-              ) : (
-                <div key={i} className="aspect-[4/3] bg-gray-100" />
-              );
-            })}
-          </div>
-        </div>
-
-        {/* モバイル：メイン画像＋ボタン */}
-        <div className="md:hidden">
-          <button
-            onClick={() => openModal(0)}
-            className="relative w-full aspect-video overflow-hidden rounded-xl group"
-            aria-label={main.alt_text ?? "画像を拡大"}
-          >
-            <Image
-              src={getOptimizedUrl(main.url, { width: 1080 })}
-              alt={main.alt_text ?? ""}
-              fill
-              sizes="100vw"
-              className="object-cover transition-transform duration-300 group-hover:scale-105"
-              priority
+        {/* 「写真をすべて見る」オーバーレイ（能動的な閲覧モーダルを開く） */}
+        <button
+          onClick={() => openModal(0)}
+          className="absolute bottom-3 left-3 z-20 inline-flex items-center gap-1.5 rounded-lg bg-white/90 px-3 py-2 text-sm font-medium text-gray-800 shadow-sm backdrop-blur-sm transition-colors hover:bg-white"
+          aria-label={`写真をすべて見る（全${photos.length}枚）`}
+        >
+          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={1.8}
+              d="M4 6a2 2 0 012-2h8a2 2 0 012 2v6a2 2 0 01-2 2H6a2 2 0 01-2-2V6z"
             />
-          </button>
-          {photos.length > 1 && (
-            <button
-              onClick={() => openModal(0)}
-              className="mt-3 w-full rounded-lg border border-gray-200 bg-white py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
-            >
-              全{photos.length}枚を見る
-            </button>
-          )}
-        </div>
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={1.8}
+              d="M8 18h10a2 2 0 002-2v-6"
+            />
+          </svg>
+          写真をすべて見る
+          <span className="text-gray-500">（{photos.length}）</span>
+        </button>
       </div>
 
-      {/* モーダル */}
+      {/* モーダル：全写真を1枚ずつ確認 */}
       {modalIndex !== null && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/80"
