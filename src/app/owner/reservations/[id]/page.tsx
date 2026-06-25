@@ -98,6 +98,8 @@ export default function ReservationDetailPage() {
   }, [user, authLoading, id]);
 
   async function load() {
+    // user が確実に存在しない限り所有者チェックは行わない（他人の施設へのアクセス防止）。
+    if (!user) { router.replace("/unauthorized"); return; }
     const { data: resData, error: resError } = await supabase
       .from("reservation_requests")
       .select("id, facility_id, guest_name, guest_email, guest_phone, guest_count, checkin_date, checkout_date, total_price, message, status, owner_reply, created_at")
@@ -122,7 +124,7 @@ export default function ReservationDetailPage() {
       return;
     }
 
-    if (facData.owner_id !== user!.id) {
+    if (facData.owner_id !== user.id) {
       router.replace("/unauthorized");
       return;
     }

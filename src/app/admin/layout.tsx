@@ -104,7 +104,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </div>
         <NavLinks />
         <div className="p-4 border-t border-white/10">
-          <p className="text-xs text-white/40 truncate">{user!.email}</p>
+          <p className="text-xs text-white/40 truncate">{user?.email}</p>
         </div>
       </aside>
 
@@ -151,7 +151,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               </div>
               <NavLinks onNavigate={() => setMenuOpen(false)} />
               <div className="p-4 border-t" style={{ borderColor: "rgba(255,255,255,0.1)" }}>
-                <p className="text-xs text-white/40 truncate">{user!.email}</p>
+                <p className="text-xs text-white/40 truncate">{user?.email}</p>
               </div>
             </aside>
           </div>

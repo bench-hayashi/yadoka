@@ -48,6 +48,8 @@ export default function EditFacilityPage() {
     }
 
     async function load() {
+      // user が確実に存在しない限り所有者チェックは行わない（他人の施設へのアクセス防止）。
+      if (!user) { router.replace("/unauthorized"); return; }
       const { data, error } = await supabase
         .from("facilities")
         .select(
@@ -64,7 +66,7 @@ export default function EditFacilityPage() {
 
       const facility = data as FacilityRow;
 
-      if (facility.owner_id !== user!.id) {
+      if (facility.owner_id !== user.id) {
         router.replace("/unauthorized");
         return;
       }

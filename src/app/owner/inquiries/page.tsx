@@ -76,11 +76,12 @@ export default function InquiriesPage() {
   }, [user, authLoading]);
 
   async function load() {
+    if (!user) return;
     // Step 1: 自分の施設一覧を取得
     const { data: facilities } = await supabase
       .from("facilities")
       .select("id, name")
-      .eq("owner_id", user!.id);
+      .eq("owner_id", user.id);
 
     if (!facilities || facilities.length === 0) {
       setLoading(false);

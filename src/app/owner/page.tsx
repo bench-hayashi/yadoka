@@ -59,12 +59,13 @@ export default function OwnerDashboard() {
 
   useEffect(() => {
     if (!user) return;
+    const userId = user.id;
 
     async function fetch() {
       const { data: facs } = await supabase
         .from("facilities")
         .select("id, name, status, is_published, updated_at")
-        .eq("owner_id", user!.id)
+        .eq("owner_id", userId)
         .order("updated_at", { ascending: false });
 
       const facilities: FacilitySummary[] = (facs ?? []) as FacilitySummary[];

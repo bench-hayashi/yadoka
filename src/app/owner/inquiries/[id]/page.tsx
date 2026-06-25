@@ -76,6 +76,8 @@ export default function InquiryDetailPage() {
   }, [user, authLoading, id]);
 
   async function load() {
+    // user が確実に存在しない限り所有者チェックは行わない（他人の施設へのアクセス防止）。
+    if (!user) { router.replace("/unauthorized"); return; }
     // 問い合わせ取得
     const { data: inqData, error: inqError } = await supabase
       .from("inquiries")
@@ -102,7 +104,7 @@ export default function InquiryDetailPage() {
       return;
     }
 
-    if (facData.owner_id !== user!.id) {
+    if (facData.owner_id !== user.id) {
       router.replace("/unauthorized");
       return;
     }

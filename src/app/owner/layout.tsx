@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider";
+import { supabase } from "@/lib/supabase";
 
 const NAV_ITEMS = [
   { href: "/owner",          label: "ダッシュボード"   },
@@ -40,23 +41,50 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
   );
 }
 
+// owner 画面は施設オーナーと管理者のみアクセス可能。
+type RoleStatus = "loading" | "authorized" | "unauthorized";
+
 export default function OwnerLayout({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const router = useRouter();
+  const [roleStatus, setRoleStatus] = useState<RoleStatus>("loading");
   const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
-    if (!loading && !user) {
-      router.replace("/login");
-    }
-  }, [user, loading, router]);
+    if (authLoading) return;
 
-  if (loading || !user) {
+    if (!user) {
+      router.replace("/login");
+      return;
+    }
+
+    supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .single()
+      .then(({ data }) => {
+        // owner 画面は管理者もアクセス可能なので admin も許可する。
+        if (data?.role === "owner" || data?.role === "admin") {
+          setRoleStatus("authorized");
+        } else {
+          setRoleStatus("unauthorized");
+          router.replace("/unauthorized");
+        }
+      });
+  }, [user, authLoading, router]);
+
+  if (authLoading || roleStatus === "loading") {
     return (
       <div className="flex items-center justify-center py-24 text-gray-400 text-sm">
         読み込み中...
       </div>
     );
+  }
+
+  // 未ログイン・権限なしの場合は owner UI を一切描画しない（redirect 済み）。
+  if (roleStatus !== "authorized") {
+    return null;
   }
 
   return (
@@ -70,7 +98,7 @@ export default function OwnerLayout({ children }: { children: React.ReactNode })
         </div>
         <NavLinks />
         <div className="p-4 border-t border-gray-100">
-          <p className="text-xs text-gray-400 truncate">{user.email}</p>
+          <p className="text-xs text-gray-400 truncate">{user?.email}</p>
         </div>
       </aside>
 
@@ -113,7 +141,7 @@ export default function OwnerLayout({ children }: { children: React.ReactNode })
               </div>
               <NavLinks onNavigate={() => setMenuOpen(false)} />
               <div className="p-4 border-t border-gray-100">
-                <p className="text-xs text-gray-400 truncate">{user.email}</p>
+                <p className="text-xs text-gray-400 truncate">{user?.email}</p>
               </div>
             </aside>
           </div>
