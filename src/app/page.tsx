@@ -6,6 +6,7 @@ import JsonLd from "@/components/JsonLd";
 import FacilityCarousel from "@/components/FacilityCarousel";
 import { getImageUrl } from "@/lib/cloudinary";
 import TagIcon from "@/components/TagIcon";
+import FirstTimeValueProp from "@/components/FirstTimeValueProp";
 import {
   getPopularAreas,
   getAvailableThisWeek,
@@ -172,6 +173,8 @@ export default async function Home() {
           YADOKA
         </span>
       </section>
+
+      <FirstTimeValueProp />
 
       {/* エリアから探す */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
