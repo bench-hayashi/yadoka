@@ -3,7 +3,6 @@
 import { useEffect, useState, useCallback } from "react";
 import Image from "next/image";
 import { getOptimizedUrl } from "@/lib/cloudinary";
-import SizzleSlideshow from "@/components/SizzleSlideshow";
 
 type Photo = {
   url: string;
@@ -12,11 +11,9 @@ type Photo = {
 
 type Props = {
   photos: Photo[];
-  /** スライドショーに表示する最大枚数（先頭から。hero先頭順は呼び出し側で整える）。 */
-  slideshowMax?: number;
 };
 
-export default function PhotoGallery({ photos, slideshowMax = 6 }: Props) {
+export default function PhotoGallery({ photos }: Props) {
   const [modalIndex, setModalIndex] = useState<number | null>(null);
 
   const openModal = (index: number) => setModalIndex(index);
@@ -43,29 +40,57 @@ export default function PhotoGallery({ photos, slideshowMax = 6 }: Props) {
 
   if (photos.length === 0) return null;
 
-  const main = photos[0];
-  // 受動的に眺めるスライドショー用：先頭から最大 slideshowMax 枚に絞る。
-  const slideshowImages = photos.slice(0, slideshowMax).map((p) => ({
-    url: p.url,
-    alt: p.alt_text ?? "",
-  }));
-  const hasMultiple = photos.length >= 2;
-
   return (
     <>
-      {/* 主画像エリア：複数枚はスライドショー、1枚以下は静止画 */}
-      <div className="relative w-full">
-        {hasMultiple ? (
-          <SizzleSlideshow images={slideshowImages} />
+      {/* ヒーロー：Airbnb/Booking型サムネイル一覧（PCは大1枚＋小4枚の2x2）。
+          モバイルは大1枚のみ表示し、残りはモーダルで確認。
+          写真5枚未満は2x2が崩れるため大1枚にフォールバック。 */}
+      <div className="relative">
+        {photos.length >= 5 ? (
+          <div className="grid grid-cols-1 md:grid-cols-4 md:grid-rows-2 gap-2 md:h-[420px] rounded-2xl overflow-hidden">
+            {/* 大画像（PCで左半分・2行ぶち抜き／モバイルはフル幅16:9） */}
+            <button
+              onClick={() => openModal(0)}
+              className="group relative md:col-span-2 md:row-span-2 aspect-video md:aspect-auto overflow-hidden bg-gray-100"
+              aria-label={photos[0].alt_text ?? "写真を拡大"}
+            >
+              <Image
+                src={getOptimizedUrl(photos[0].url, { width: 1280 })}
+                alt={photos[0].alt_text ?? ""}
+                fill
+                sizes="(max-width: 768px) 100vw, 50vw"
+                className="object-cover transition-transform duration-300 group-hover:scale-105"
+                priority
+              />
+            </button>
+
+            {/* 小画像4枚（PCのみ。右側2x2） */}
+            {photos.slice(1, 5).map((p, i) => (
+              <button
+                key={i}
+                onClick={() => openModal(i + 1)}
+                className="group relative hidden md:block overflow-hidden bg-gray-100"
+                aria-label={p.alt_text ?? "写真を拡大"}
+              >
+                <Image
+                  src={getOptimizedUrl(p.url, { width: 640 })}
+                  alt={p.alt_text ?? ""}
+                  fill
+                  sizes="25vw"
+                  className="object-cover transition-transform duration-300 group-hover:scale-105"
+                />
+              </button>
+            ))}
+          </div>
         ) : (
           <button
             onClick={() => openModal(0)}
             className="group relative block aspect-video w-full overflow-hidden rounded-2xl bg-gray-100"
-            aria-label={main.alt_text ?? "画像を拡大"}
+            aria-label={photos[0].alt_text ?? "写真を拡大"}
           >
             <Image
-              src={getOptimizedUrl(main.url, { width: 1280 })}
-              alt={main.alt_text ?? ""}
+              src={getOptimizedUrl(photos[0].url, { width: 1280 })}
+              alt={photos[0].alt_text ?? ""}
               fill
               sizes="(max-width: 1024px) 100vw, 66vw"
               className="object-cover transition-transform duration-300 group-hover:scale-105"
@@ -74,38 +99,26 @@ export default function PhotoGallery({ photos, slideshowMax = 6 }: Props) {
           </button>
         )}
 
-        {/* 「写真をすべて見る」オーバーレイ（能動的な閲覧モーダルを開く） */}
+        {/* 「写真をすべて見る」オーバーレイ（右下固定。全枚数のモーダルを開く） */}
         <button
           onClick={() => openModal(0)}
-          className="absolute bottom-3 left-3 z-20 inline-flex items-center gap-1.5 rounded-lg bg-white/90 px-3 py-2 text-sm font-medium text-gray-800 shadow-sm backdrop-blur-sm transition-colors hover:bg-white"
+          className="absolute bottom-3 right-3 z-20 inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white/95 px-3.5 py-2 text-sm font-medium text-gray-800 shadow-sm backdrop-blur-sm transition-colors hover:bg-white"
           aria-label={`写真をすべて見る（全${photos.length}枚）`}
         >
           <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={1.8}
-              d="M4 6a2 2 0 012-2h8a2 2 0 012 2v6a2 2 0 01-2 2H6a2 2 0 01-2-2V6z"
-            />
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={1.8}
-              d="M8 18h10a2 2 0 002-2v-6"
-            />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M4 6a2 2 0 012-2h4v6H4V6zM14 4h4a2 2 0 012 2v4h-6V4zM4 14h6v6H6a2 2 0 01-2-2v-4zM14 14h6v4a2 2 0 01-2 2h-4v-6z" />
           </svg>
           写真をすべて見る
           <span className="text-gray-500">（{photos.length}）</span>
         </button>
       </div>
 
-      {/* モーダル：全写真を1枚ずつ確認 */}
+      {/* モーダル：全写真を1枚ずつ確認（既存のまま） */}
       {modalIndex !== null && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/80"
           onClick={closeModal}
         >
-          {/* ×ボタン */}
           <button
             onClick={closeModal}
             className="absolute top-4 right-4 flex h-10 w-10 items-center justify-center rounded-full bg-white/20 text-white hover:bg-white/30 transition-colors"
@@ -116,12 +129,10 @@ export default function PhotoGallery({ photos, slideshowMax = 6 }: Props) {
             </svg>
           </button>
 
-          {/* 枚数インジケーター */}
           <p className="absolute top-5 left-1/2 -translate-x-1/2 text-sm text-white/70">
             {modalIndex + 1} / {photos.length}
           </p>
 
-          {/* 左矢印 */}
           {photos.length > 1 && (
             <button
               onClick={(e) => { e.stopPropagation(); prev(); }}
@@ -134,7 +145,6 @@ export default function PhotoGallery({ photos, slideshowMax = 6 }: Props) {
             </button>
           )}
 
-          {/* 画像本体 */}
           <div
             className="relative mx-16 sm:mx-24 w-full max-w-5xl aspect-[4/3]"
             onClick={(e) => e.stopPropagation()}
@@ -148,7 +158,6 @@ export default function PhotoGallery({ photos, slideshowMax = 6 }: Props) {
             />
           </div>
 
-          {/* 右矢印 */}
           {photos.length > 1 && (
             <button
               onClick={(e) => { e.stopPropagation(); next(); }}
